@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Moveli.API/Moveli.API.csproj" />
+    <Project Path="src/Moveli.Application/Moveli.Application.csproj" />
+    <Project Path="src/Moveli.Domain/Moveli.Domain.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Moveli.Tests/Moveli.Tests.csproj" />
+  </Folder>
+</Solution>

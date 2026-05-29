@@ -1,0 +1,257 @@
+/* ─────────────────────────────────────────────────────────────────
+   eToro — Colors & Type
+   Source: DS - React.fig (Foundations / Colors / Typography-Finalizing)
+
+   Real eToro fonts (variable + static) are loaded from /fonts.
+   Variable fonts cover the full 100–900 range, static faces are
+   declared as fallback so older browsers still pick the right
+   weight/style.
+   ───────────────────────────────────────────────────────────────── */
+
+/* Variable fonts (preferred) */
+@font-face {
+  font-family: "eToro 0.7";
+  src: url("fonts/eToro-VF-v0.7.ttf") format("truetype-variations"),
+       url("fonts/eToro-VF-v0.7.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "eToro Mono 0.7";
+  src: url("fonts/eToro-Mono-VF-v0.7.ttf") format("truetype-variations"),
+       url("fonts/eToro-Mono-VF-v0.7.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Tabular-figures number cut */
+@font-face {
+  font-family: "eToro Numbers";
+  src: url("fonts/eToro0.7-Numbers.ttf") format("truetype");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Static weight fallbacks (in case the variable font fails to parse) */
+@font-face { font-family: "eToro 0.7 Static"; src: url("fonts/eToro0.7-Light.ttf") format("truetype");    font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro 0.7 Static"; src: url("fonts/eToro0.7-Regular.ttf") format("truetype");  font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro 0.7 Static"; src: url("fonts/eToro0.7-Medium.ttf") format("truetype");   font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro 0.7 Static"; src: url("fonts/eToro0.7-Semibold.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro 0.7 Static"; src: url("fonts/eToro0.7-Bold.ttf") format("truetype");     font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro 0.7 Static"; src: url("fonts/eToro0.7-Extrabold.ttf") format("truetype");font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro 0.7 Static"; src: url("fonts/eToro0.7-Black.ttf") format("truetype");    font-weight: 900; font-style: normal; font-display: swap; }
+
+@font-face { font-family: "eToro Mono 0.7 Static"; src: url("fonts/eToroMono0.7-Regular.ttf") format("truetype");  font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro Mono 0.7 Static"; src: url("fonts/eToroMono0.7-Medium.ttf") format("truetype");   font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro Mono 0.7 Static"; src: url("fonts/eToroMono0.7-Semibold.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "eToro Mono 0.7 Static"; src: url("fonts/eToroMono0.7-Bold.ttf") format("truetype");     font-weight: 700; font-style: normal; font-display: swap; }
+
+:root {
+  /* ---------- BRAND / PRIMARY ---------- */
+  --etoro-green-050: #F2FCF4;
+  --etoro-green-100: #DEFCE4;
+  --etoro-green-200: #B8FFC5;
+  --etoro-green-300: #99FFAC;
+  --etoro-green-400: #6EFF8B;
+  --etoro-green-500: #1CCF3F;
+  --etoro-green-600: #0EB12E; /* primary brand green */
+  --etoro-green-700: #10A12C;
+  --etoro-green-800: #206B2F;
+  --etoro-green-900: #14421D;
+  --etoro-green-1000: #0F3A17;
+
+  /* ---------- VERDICT / NEGATIVE (red) ---------- */
+  --etoro-red-050: #FCF3F2;
+  --etoro-red-100: #FCDFDE;
+  --etoro-red-200: #FFA39E;
+  --etoro-red-300: #FF6D66;
+  --etoro-red-400: #FF665E;
+  --etoro-red-500: #F55249;
+  --etoro-red-600: #D12515; /* primary brand red */
+  --etoro-red-700: #BF1100;
+  --etoro-red-800: #99332E;
+  --etoro-red-900: #6B2420;
+  --etoro-red-1000: #2D0F0E;
+
+  /* ---------- NEUTRAL / GREYSCALE ---------- */
+  --neutral-050: #F7F7F7;
+  --neutral-100: #F2F2F2;
+  --neutral-200: #E0E0E0;
+  --neutral-300: #CCCCCC;
+  --neutral-400: #B1B4B3;
+  --neutral-500: #999999;
+  --neutral-600: #666666;
+  --neutral-700: #393939;
+  --neutral-800: #2E3033;
+  --neutral-900: #1B1E21; /* core text / surface dark */
+  --neutral-1000: #0A0B0C;
+  --white: #FFFFFF;
+  --black: #000000;
+
+  /* ---------- VERDICT / TINT FILLS ---------- */
+  --positive-tint:  rgba(14,177,46,0.15);
+  --positive-tint-50: rgba(14,177,46,0.50);
+  --negative-tint:  rgba(245,82,73,0.15);
+  --negative-tint-50: rgba(245,82,73,0.50);
+
+  /* ---------- ACCENT / SECONDARY ---------- */
+  --accent-purple: #9747FF;     /* design-system internal accent (annotations, audit) */
+  --accent-blue:   #0052B4;     /* charts, links */
+  --accent-yellow: #FFDA44;     /* highlights, warnings */
+  --accent-magenta:#E040AF;     /* promo / brand splash */
+
+  /* ---------- RISK SCORE (10-stop gauge) ---------- */
+  --risk-1:  #008C17;
+  --risk-2:  #00A61C;
+  --risk-3:  #61C200;
+  --risk-4:  #A8D200;
+  --risk-5:  #E5DC00;
+  --risk-6:  #FBC400;
+  --risk-7:  #FFA318;
+  --risk-8:  #FF6E1D;
+  --risk-9:  #E20D0D;
+  --risk-10: #BB0000;
+
+  /* ---------- SEMANTIC TOKENS ---------- */
+  --bg-canvas:       var(--white);
+  --bg-elevated:     var(--white);
+  --bg-subtle:       var(--neutral-050);
+  --bg-muted:        var(--neutral-100);
+  --bg-inverse:      var(--neutral-900);
+
+  --fg-primary:      var(--neutral-900);
+  --fg-secondary:    #5A6178;       /* sampled from text-styles "rgb(90,97,120)" */
+  --fg-tertiary:     var(--neutral-500);
+  --fg-on-color:     var(--white);
+  --fg-link:         var(--accent-blue);
+
+  --border-default:  var(--neutral-200);
+  --border-strong:   var(--neutral-300);
+  --border-focus:    var(--etoro-green-600);
+
+  --positive:        var(--etoro-green-600);
+  --positive-strong: var(--etoro-green-700);
+  --positive-soft:   var(--etoro-green-050);
+  --negative:        var(--etoro-red-600);
+  --negative-strong: var(--etoro-red-700);
+  --negative-soft:   var(--etoro-red-050);
+
+  /* ---------- RADIUS (corners) ---------- */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 36px;     /* large cards, hero panels */
+  --radius-pill: 999px;
+
+  /* ---------- SPACING (4px grid) ---------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+
+  /* ---------- ELEVATION / SHADOW ---------- */
+  --shadow-xs:  0 1px 2px rgba(27,30,33,0.04);
+  --shadow-sm:  0 2px 4px rgba(27,30,33,0.06), 0 1px 2px rgba(27,30,33,0.04);
+  --shadow-md:  0 6px 16px rgba(27,30,33,0.08), 0 2px 6px rgba(27,30,33,0.04);
+  --shadow-lg:  0 16px 40px rgba(27,30,33,0.12), 0 4px 12px rgba(27,30,33,0.06);
+  --shadow-xl:  0 28px 64px rgba(27,30,33,0.18);
+  --shadow-pop: 0 0 0 1px rgba(27,30,33,0.06), 0 12px 28px rgba(27,30,33,0.16);
+  --glow-positive: 0 0 0 4px rgba(14,177,46,0.20);
+  --glow-negative: 0 0 0 4px rgba(209,37,21,0.20);
+  --glow-focus:    0 0 0 3px rgba(14,177,46,0.35);
+
+  /* ---------- TYPE — FAMILIES ---------- */
+  --font-display: "eToro 0.7", "eToro 0.7 Static", system-ui, sans-serif;
+  --font-body:    "eToro 0.7", "eToro 0.7 Static", system-ui, sans-serif;
+  --font-numbers: "eToro Numbers", "eToro 0.7", "eToro 0.7 Static", system-ui, sans-serif;
+  --font-mono:    "eToro Mono 0.7", "eToro Mono 0.7 Static", "SF Mono", ui-monospace, monospace;
+
+  /* ---------- TYPE — SCALES ---------- */
+  /* Display */
+  --text-display-hero:    700 34px/40px var(--font-display);
+  --text-display-main:    700 32px/40px var(--font-display);
+
+  /* Heading */
+  --text-heading-large:   700 22px/28px var(--font-display);
+  --text-heading-base:    600 20px/26px var(--font-display);
+  --text-heading-compact: 600 18px/24px var(--font-display);
+
+  /* Body */
+  --text-body-base:       400 16px/22px var(--font-body);
+  --text-body-base-md:    500 16px/24px var(--font-body);
+  --text-body-base-sb:    600 16px/24px var(--font-body);
+  --text-body-secondary:  400 14px/18px var(--font-body);
+  --text-body-secondary-md: 500 14px/20px var(--font-body);
+  --text-body-secondary-sb: 600 14px/20px var(--font-body);
+  --text-body-tiny:       400 12px/16px var(--font-body);
+  --text-body-tiny-md:    500 12px/16px var(--font-body);
+
+  /* Labels (UI / buttons) */
+  --text-label-primary:   600 16px/20px var(--font-body);
+  --text-label-primary-bold: 700 16px/20px var(--font-body);
+  --text-label-secondary: 600 14px/18px var(--font-body);
+  --text-label-secondary-bold: 700 14px/18px var(--font-body);
+  --text-label-tertiary:  600 12px/16px var(--font-body);
+  --text-label-tertiary-bold: 700 12px/16px var(--font-body);
+
+  /* Numerical readouts (tabular figures preferred) */
+  --text-num-hero:        700 50px/56px var(--font-numbers);
+  --text-num-base:        700 22px/28px var(--font-numbers);
+  --text-num-small:       600 14px/20px var(--font-numbers);
+
+  /* Tracking */
+  --tracking-tight: -0.25px;
+  --tracking-normal: 0;
+
+  /* ---------- MOTION ---------- */
+  --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:   140ms;
+  --dur-base:   220ms;
+  --dur-slow:   400ms;
+}
+
+/* ---------- ELEMENT DEFAULTS ---------- */
+html, body {
+  background: var(--bg-canvas);
+  color: var(--fg-primary);
+  font: var(--text-body-base);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "tnum";
+}
+
+h1 { font: var(--text-display-main); letter-spacing: var(--tracking-tight); margin: 0; color: var(--fg-primary); }
+h2 { font: var(--text-heading-large); letter-spacing: var(--tracking-tight); margin: 0; color: var(--fg-primary); }
+h3 { font: var(--text-heading-base); margin: 0; color: var(--fg-primary); }
+h4 { font: var(--text-heading-compact); margin: 0; color: var(--fg-primary); }
+p  { font: var(--text-body-base); color: var(--fg-secondary); margin: 0; }
+small { font: var(--text-body-secondary); color: var(--fg-tertiary); }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+
+a {
+  color: var(--fg-link);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+a:hover { border-color: currentColor; }
+
+/* numerical figures should always look right */
+.num,
+[data-num] { font-family: var(--font-numbers); font-variant-numeric: tabular-nums; }
+
+.positive { color: var(--positive); }
+.negative { color: var(--negative); }
+.muted    { color: var(--fg-tertiary); }

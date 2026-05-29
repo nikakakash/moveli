@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>MOVELI · Marketplace design</title>
+  <meta name="viewport" content="width=1400" />
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+
+  <!-- Phosphor icons -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+
+  <link rel="stylesheet" href="ds.css" />
+  <link rel="stylesheet" href="brand.css" />
+
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; }
+    body { background: #f0eee9; overflow: hidden; }
+    @keyframes cursor { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+  </style>
+
+  <!-- React 18 + Babel (pinned) -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="parts.jsx"></script>
+  <script type="text/babel" src="screen-home.jsx"></script>
+  <script type="text/babel" src="screen-category.jsx"></script>
+  <script type="text/babel" src="screen-pdp.jsx"></script>
+  <script type="text/babel" src="screen-checkout.jsx"></script>
+  <script type="text/babel" src="screen-profile.jsx"></script>
+  <script type="text/babel" src="screen-admin.jsx"></script>
+  <script type="text/babel" src="screen-onboarding.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "language": "en",
+      "density": "cozy",
+      "palette": [
+        "#9B8EE5",
+        "#7DCEEA"
+      ]
+    }/*EDITMODE-END*/;
+
+    const PALETTES = [
+      { key: 'purple-cyan', colors: ['#9B8EE5', '#7DCEEA'], p500: '#8B7DD8', p600: '#7466CC', p700: '#5E4FB8', p050: '#F5F2FE', p100: '#E8E1FC', p300: '#B9A8F0' },
+      { key: 'sunset',      colors: ['#F472B6', '#FB923C'], p500: '#EC4899', p600: '#DB2777', p700: '#BE185D', p050: '#FDF2F8', p100: '#FCE7F3', p300: '#F9A8D4' },
+      { key: 'forest',      colors: ['#10B981', '#06B6D4'], p500: '#059669', p600: '#047857', p700: '#065F46', p050: '#ECFDF5', p100: '#D1FAE5', p300: '#6EE7B7' },
+    ];
+
+    function App() {
+      const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const lang = tweaks.language;
+
+      // Density override
+      useEffect(() => {
+        document.documentElement.style.setProperty('--sp-density-factor', tweaks.density === 'compact' ? '0.85' : '1');
+      }, [tweaks.density]);
+
+      // Palette override
+      useEffect(() => {
+        const root = document.documentElement;
+        const match = PALETTES.find(p => JSON.stringify(p.colors) === JSON.stringify(tweaks.palette)) || PALETTES[0];
+        root.style.setProperty('--moveli-purple-500', match.p500);
+        root.style.setProperty('--moveli-purple-600', match.p600);
+        root.style.setProperty('--moveli-purple-700', match.p700);
+        root.style.setProperty('--moveli-purple-050', match.p050);
+        root.style.setProperty('--moveli-purple-100', match.p100);
+        root.style.setProperty('--moveli-purple-300', match.p300);
+        root.style.setProperty('--moveli-gradient', `linear-gradient(95deg, ${match.colors[0]} 0%, ${match.colors[1]} 100%)`);
+        root.style.setProperty('--moveli-gradient-vivid', `linear-gradient(95deg, ${match.colors[0]} 0%, ${match.colors[1]} 100%)`);
+      }, [tweaks.palette]);
+
+      return (
+        <>
+          <DesignCanvas>
+            <DCSection id="shop" title="Shopping flow" subtitle="Onboarding → Home → Browse → PDP → Checkout">
+              <DCArtboard id="onboarding" label="01 · Onboarding & sign-up" width={1440} height={880}>
+                <OnboardingScreen lang={lang} />
+              </DCArtboard>
+              <DCArtboard id="home" label="02 · Home / landing" width={1440} height={2480}>
+                <HomeScreen lang={lang} />
+              </DCArtboard>
+              <DCArtboard id="category" label="03 · Category & search · live suggestions" width={1440} height={1180}>
+                <CategoryScreen lang={lang} />
+              </DCArtboard>
+              <DCArtboard id="pdp" label="04 · Product detail · gallery zoom + add-to-cart" width={1440} height={1640}>
+                <PdpScreen lang={lang} />
+              </DCArtboard>
+              <DCArtboard id="checkout" label="05 · Cart & checkout" width={1440} height={1500}>
+                <CheckoutScreen lang={lang} />
+              </DCArtboard>
+            </DCSection>
+
+            <DCSection id="account" title="Account & admin" subtitle="Customer account, plus the platform admin dashboard">
+              <DCArtboard id="profile" label="06 · Customer · order history" width={1440} height={1100}>
+                <ProfileScreen lang={lang} />
+              </DCArtboard>
+              <DCArtboard id="admin" label="07 · Admin dashboard" width={1440} height={1180}>
+                <AdminScreen lang={lang} />
+              </DCArtboard>
+            </DCSection>
+          </DesignCanvas>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Language" />
+            <TweakRadio
+              label="Display"
+              value={tweaks.language}
+              onChange={(v) => setTweak('language', v)}
+              options={[
+                { value: 'ka', label: 'ქართული' },
+                { value: 'en', label: 'English' },
+              ]}
+            />
+            <TweakSection label="Brand palette" />
+            <TweakColor
+              label="Gradient"
+              value={tweaks.palette}
+              onChange={(v) => setTweak('palette', v)}
+              options={PALETTES.map(p => p.colors)}
+            />
+            <TweakSection label="Density" />
+            <TweakRadio
+              label="Spacing"
+              value={tweaks.density}
+              onChange={(v) => setTweak('density', v)}
+              options={[
+                { value: 'cozy', label: 'Cozy' },
+                { value: 'compact', label: 'Compact' },
+              ]}
+            />
+          </TweaksPanel>
+        </>
+      );
+    }
+
+    // Wait until all scripts loaded then mount
+    function mount() {
+      if (typeof DesignCanvas === 'undefined' || typeof TweaksPanel === 'undefined' || typeof HomeScreen === 'undefined' || typeof AdminScreen === 'undefined') {
+        return setTimeout(mount, 50);
+      }
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    }
+    mount();
+  </script>
+</body>
+</html>
