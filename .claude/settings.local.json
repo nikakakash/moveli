@@ -76,7 +76,13 @@
       "Bash(grep -v \"^[^:]*:[^:]*://\\\\|^[^:]*:.*///\")",
       "Bash(xargs grep -l \"Request\\\\|DTO\")",
       "Bash(xargs ls -1)",
-      "Bash(xargs grep -l \"password\\\\|Password\")"
+      "Bash(xargs grep -l \"password\\\\|Password\")",
+      "Bash(git submodule *)",
+      "Bash(mv frontend/.git \"C:\\\\Users\\\\Nika\\\\Desktop\\\\frontend-git-backup\")",
+      "Bash(git rm *)",
+      "Bash(gh auth *)",
+      "Bash(git push *)",
+      "Bash(git credential *)"
     ]
   },
   "enabledPlugins": {
