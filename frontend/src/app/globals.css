@@ -1,0 +1,174 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+
+  /* MOVELI brand: purple ramp */
+  --color-moveli-purple-50: #F5F2FE;
+  --color-moveli-purple-100: #E8E1FC;
+  --color-moveli-purple-200: #D4C8F7;
+  --color-moveli-purple-300: #B9A8F0;
+  --color-moveli-purple-400: #A491E4;
+  --color-moveli-purple-500: #8B7DD8;
+  --color-moveli-purple-600: #7466CC;
+  --color-moveli-purple-700: #5E4FB8;
+  --color-moveli-purple-800: #44389A;
+  --color-moveli-purple-900: #2A226B;
+
+  /* MOVELI brand: cyan ramp */
+  --color-moveli-cyan-50: #EEFAFF;
+  --color-moveli-cyan-100: #DAF2FC;
+  --color-moveli-cyan-200: #B5E5F7;
+  --color-moveli-cyan-300: #90D4EE;
+  --color-moveli-cyan-400: #7BC8E6;
+  --color-moveli-cyan-500: #5DB6D8;
+  --color-moveli-cyan-600: #4099C2;
+  --color-moveli-cyan-700: #2C7BA3;
+  --color-moveli-cyan-800: #1F5B7A;
+  --color-moveli-cyan-900: #133A4F;
+
+  /* shadcn semantic */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #1B1E21;
+  --card: #FFFFFF;
+  --card-foreground: #1B1E21;
+  --popover: #FFFFFF;
+  --popover-foreground: #1B1E21;
+  --primary: #8B7DD8;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F5F2FE;
+  --secondary-foreground: #2A226B;
+  --muted: #F7F7F7;
+  --muted-foreground: #6B7280;
+  --accent: #EEFAFF;
+  --accent-foreground: #133A4F;
+  --destructive: #D12515;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #8B7DD8;
+  --chart-1: #8B7DD8;
+  --chart-2: #7BC8E6;
+  --chart-3: #5E4FB8;
+  --chart-4: #5DB6D8;
+  --chart-5: #A491E4;
+  --radius: 0.625rem;
+  --sidebar: #FAFAFA;
+  --sidebar-foreground: #1B1E21;
+  --sidebar-primary: #8B7DD8;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F5F2FE;
+  --sidebar-accent-foreground: #2A226B;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #8B7DD8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* MOVELI brand gradient utility */
+.bg-moveli-gradient {
+  background: linear-gradient(95deg, #8B7DD8 0%, #7BC8E6 100%);
+}
+.bg-moveli-gradient-soft {
+  background: linear-gradient(135deg, #F5F2FE 0%, #EEFAFF 100%);
+}
+.text-moveli-gradient {
+  background: linear-gradient(95deg, #9B8EE5 0%, #7DCEEA 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Floating cards (auth onboarding) */
+@keyframes moveli-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+.animate-float {
+  animation: moveli-float 6s ease-in-out infinite;
+}
+.animate-float-delayed {
+  animation: moveli-float 7s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+.animate-float-slow {
+  animation: moveli-float 8s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+
+/* Add-to-cart fly-to-cart animation */
+@keyframes moveli-fly-to-cart {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+  70% { opacity: 0.8; }
+  100% { transform: translate(var(--fly-dx), var(--fly-dy)) scale(0.1); opacity: 0; }
+}
+.moveli-fly {
+  position: fixed;
+  z-index: 9999;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  pointer-events: none;
+  animation: moveli-fly-to-cart 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-float-delayed,
+  .animate-float-slow { animation: none; }
+}

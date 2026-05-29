@@ -1,0 +1,387 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import {
+  getDiscounts,
+  createDiscount,
+  updateDiscount,
+  deleteDiscount,
+} from "@/lib/api/admin";
+import { apiFetch } from "@/lib/api/client";
+import { toast } from "sonner";
+import type {
+  DiscountDto,
+  DiscountScope,
+  CreateDiscountRequest,
+  PagedResult,
+  ProductListDto,
+  CategoryTreeDto,
+  BrandDto,
+} from "@/lib/api/types";
+import { Plus, PencilSimple, Trash, X } from "@phosphor-icons/react";
+
+interface TargetOption {
+  id: string;
+  name: string;
+}
+
+const emptyForm: CreateDiscountRequest = {
+  scope: "Product",
+  targetId: "",
+  percentage: 10,
+  isActive: true,
+  startsAt: null,
+  endsAt: null,
+};
+
+// "2026-05-29T14:30:00Z" -> "2026-05-29T14:30" for datetime-local inputs
+function toLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(value: string): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+export default function AdminDiscountsPage() {
+  const t = useTranslations("admin");
+  const locale = useLocale();
+  const [discounts, setDiscounts] = useState<DiscountDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<CreateDiscountRequest>(emptyForm);
+
+  const [products, setProducts] = useState<TargetOption[]>([]);
+  const [categories, setCategories] = useState<TargetOption[]>([]);
+  const [brands, setBrands] = useState<TargetOption[]>([]);
+
+  const fetchDiscounts = useCallback(async () => {
+    try {
+      const data = await getDiscounts();
+      setDiscounts(data);
+    } catch {
+      toast.error("Failed to load discounts");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchTargets = useCallback(async () => {
+    try {
+      const [prodRes, catRes, brandRes] = await Promise.all([
+        apiFetch<PagedResult<ProductListDto>>("/products?pageSize=200"),
+        apiFetch<CategoryTreeDto[]>("/categories"),
+        apiFetch<BrandDto[]>("/brands"),
+      ]);
+
+      setProducts(
+        prodRes.items.map((p) => ({
+          id: p.id,
+          name: locale === "ka" ? p.nameKa : p.nameEn,
+        }))
+      );
+
+      const flat: TargetOption[] = [];
+      const walk = (nodes: CategoryTreeDto[]) => {
+        for (const n of nodes) {
+          flat.push({ id: n.id, name: locale === "ka" ? n.nameKa : n.nameEn });
+          if (n.children?.length) walk(n.children);
+        }
+      };
+      walk(catRes);
+      setCategories(flat);
+
+      setBrands(brandRes.map((b) => ({ id: b.id, name: b.name })));
+    } catch {
+      toast.error("Failed to load targets");
+    }
+  }, [locale]);
+
+  useEffect(() => {
+    fetchDiscounts();
+    fetchTargets();
+  }, [fetchDiscounts, fetchTargets]);
+
+  const targetOptions =
+    form.scope === "Product"
+      ? products
+      : form.scope === "Category"
+        ? categories
+        : brands;
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+    setShowForm(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.targetId) {
+      toast.error(t("target") + " ?");
+      return;
+    }
+    const payload: CreateDiscountRequest = {
+      ...form,
+      startsAt: fromLocalInput(form.startsAt ?? ""),
+      endsAt: fromLocalInput(form.endsAt ?? ""),
+    };
+    try {
+      if (editingId) {
+        await updateDiscount(editingId, payload);
+        toast.success(t("discountSaved"));
+      } else {
+        await createDiscount(payload);
+        toast.success(t("discountSaved"));
+      }
+      resetForm();
+      fetchDiscounts();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save discount");
+    }
+  };
+
+  const handleEdit = (d: DiscountDto) => {
+    setForm({
+      scope: d.scope,
+      targetId: d.targetId,
+      percentage: d.percentage,
+      isActive: d.isActive,
+      startsAt: toLocalInput(d.startsAt),
+      endsAt: toLocalInput(d.endsAt),
+    });
+    setEditingId(d.id);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm(t("confirmDelete"))) return;
+    try {
+      await deleteDiscount(id);
+      toast.success(t("discountDeleted"));
+      fetchDiscounts();
+    } catch {
+      toast.error("Failed to delete discount");
+    }
+  };
+
+  const statusOf = (d: DiscountDto) => {
+    const now = Date.now();
+    if (!d.isActive) return { key: "statusOff", cls: "bg-gray-100 text-gray-500" };
+    if (d.startsAt && new Date(d.startsAt).getTime() > now)
+      return { key: "statusScheduled", cls: "bg-blue-100 text-blue-700" };
+    if (d.endsAt && new Date(d.endsAt).getTime() < now)
+      return { key: "statusExpired", cls: "bg-red-100 text-red-700" };
+    return { key: "statusActive", cls: "bg-green-100 text-green-700" };
+  };
+
+  const scopeLabel = (s: DiscountScope) =>
+    s === "Product"
+      ? t("scopeProduct")
+      : s === "Category"
+        ? t("scopeCategory")
+        : t("scopeBrand");
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">{t("discounts")}</h1>
+        <button
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+          className="flex items-center gap-2 bg-moveli-gradient text-white font-semibold px-4 py-2.5 rounded-lg text-sm"
+        >
+          <Plus size={16} weight="bold" />
+          {t("addDiscount")}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-gray-900">
+              {editingId ? t("editDiscount") : t("addDiscount")}
+            </h2>
+            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
+              <X size={20} />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("scope")}
+              </label>
+              <select
+                value={form.scope}
+                onChange={(e) =>
+                  setForm({ ...form, scope: e.target.value as DiscountScope, targetId: "" })
+                }
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              >
+                <option value="Product">{t("scopeProduct")}</option>
+                <option value="Category">{t("scopeCategory")}</option>
+                <option value="Brand">{t("scopeBrand")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("target")}
+              </label>
+              <select
+                required
+                value={form.targetId}
+                onChange={(e) => setForm({ ...form, targetId: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              >
+                <option value="">—</option>
+                {targetOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("percentage")} (%)
+              </label>
+              <input
+                type="number"
+                required
+                min={1}
+                max={100}
+                step="0.01"
+                value={form.percentage}
+                onChange={(e) =>
+                  setForm({ ...form, percentage: parseFloat(e.target.value) || 0 })
+                }
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+            <div className="flex items-end gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                  className="accent-moveli-purple-500"
+                />
+                {t("active")}
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("startsAt")}
+              </label>
+              <input
+                type="datetime-local"
+                value={form.startsAt ?? ""}
+                onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("endsAt")}
+              </label>
+              <input
+                type="datetime-local"
+                value={form.endsAt ?? ""}
+                onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+            <div className="col-span-2 flex gap-3">
+              <button
+                type="submit"
+                className="bg-moveli-gradient text-white font-semibold px-6 py-2.5 rounded-lg text-sm"
+              >
+                {editingId ? t("save") : t("create")}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
+              >
+                {t("cancel")}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50">
+              <th className="text-left px-4 py-3 font-medium text-gray-500">{t("scope")}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-500">{t("target")}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-500">{t("percentage")}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-500">{t("status")}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-500">{t("actions")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                  Loading...
+                </td>
+              </tr>
+            ) : discounts.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                  {t("noResults")}
+                </td>
+              </tr>
+            ) : (
+              discounts.map((d) => {
+                const st = statusOf(d);
+                return (
+                  <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-600">{scopeLabel(d.scope)}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{d.targetName}</td>
+                    <td className="px-4 py-3 text-gray-900">-{d.percentage}%</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.cls}`}
+                      >
+                        {t(st.key)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 flex gap-1">
+                      <button
+                        onClick={() => handleEdit(d)}
+                        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
+                      >
+                        <PencilSimple size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(d.id)}
+                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
