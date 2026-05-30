@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Moveli.API.Infrastructure.Data;
+using Moveli.Application.Common;
 using Moveli.Domain.Entities;
 using Moveli.Domain.Interfaces;
 
@@ -30,7 +31,16 @@ public class ReviewRepository : IReviewRepository
     public async Task<Review> AddAsync(Review review, CancellationToken cancellationToken = default)
     {
         _context.Reviews.Add(review);
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbConcurrency.IsUniqueViolation(ex))
+        {
+            // Concurrent duplicate review for the same (UserId, ProductId) hit the unique index.
+            _context.Entry(review).State = EntityState.Detached;
+            throw new DuplicateEntityException("You have already reviewed this product.");
+        }
         return review;
     }
 
@@ -84,20 +94,33 @@ public class ReviewRepository : IReviewRepository
 
     public async Task RecomputeProductRatingAsync(Guid productId, CancellationToken cancellationToken = default)
     {
-        var approved = await _context.Reviews
-            .Where(r => r.ProductId == productId && r.IsApproved)
-            .Select(r => r.Rating)
-            .ToListAsync(cancellationToken);
-
         var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
         if (product == null) return;
 
-        product.ReviewCount = approved.Count;
-        product.Rating = approved.Count > 0
-            ? Math.Round((decimal)approved.Average(), 2, MidpointRounding.AwayFromZero)
-            : 0m;
+        // Recompute is idempotent given the committed reviews. On an optimistic-concurrency
+        // conflict (two approvals racing), reload the row to get a fresh token and recompute again.
+        for (var attempt = 0; ; attempt++)
+        {
+            var approved = await _context.Reviews
+                .Where(r => r.ProductId == productId && r.IsApproved)
+                .Select(r => r.Rating)
+                .ToListAsync(cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
+            product.ReviewCount = approved.Count;
+            product.Rating = approved.Count > 0
+                ? Math.Round((decimal)approved.Average(), 2, MidpointRounding.AwayFromZero)
+                : 0m;
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                return;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < 3)
+            {
+                await _context.Entry(product).ReloadAsync(cancellationToken);
+            }
+        }
     }
 
     public async Task<Dictionary<Guid, UserBrief>> GetUserBriefsAsync(

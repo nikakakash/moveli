@@ -69,7 +69,7 @@ export function AuthForm({ mode }: Props) {
             </span>
           </div>
         </div>
-        <div className="absolute top-1/2 left-8 animate-float-delayed">
+        <div className="absolute top-44 left-8 animate-float-delayed">
           <div className="flex items-center gap-3 bg-white/85 backdrop-blur rounded-2xl shadow-xl px-4 py-3">
             <span className="w-9 h-9 rounded-xl bg-moveli-purple-50 text-moveli-purple-600 flex items-center justify-center">
               <Tag size={20} weight="fill" />
@@ -94,7 +94,7 @@ export function AuthForm({ mode }: Props) {
           <MoveliLogo size={32} />
         </div>
 
-        <div className="relative z-10 text-center">
+        <div className="relative z-10 text-center max-w-sm mx-auto">
           <div className="flex items-center justify-center gap-1 mb-3 text-white">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star key={i} size={18} weight="fill" />

@@ -21,10 +21,7 @@ public class SetDefaultAddressCommandHandler : IRequestHandler<SetDefaultAddress
         if (address == null || address.UserId != request.UserId)
             return Result.Failure("Address not found.");
 
-        await _addressRepository.ClearDefaultAsync(request.UserId, cancellationToken);
-
-        address.IsDefault = true;
-        await _addressRepository.UpdateAsync(address, cancellationToken);
+        await _addressRepository.SetDefaultAsync(request.UserId, request.Id, cancellationToken);
 
         return Result.Success();
     }

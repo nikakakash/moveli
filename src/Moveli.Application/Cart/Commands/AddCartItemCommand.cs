@@ -61,30 +61,45 @@ public class AddCartItemCommandHandler : IRequestHandler<AddCartItemCommand, Res
             cart = await _cartRepository.CreateAsync(cart, cancellationToken);
         }
 
-        var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == request.ProductId);
-        var totalQuantity = request.Quantity + (existingItem?.Quantity ?? 0);
+        async Task<Result> MergeIntoExistingAsync(CartItem existing)
+        {
+            var merged = existing.Quantity + request.Quantity;
+            if (product.StockQuantity < merged)
+                return Result.Failure("Not enough stock available.");
+            existing.Quantity = merged;
+            existing.UnitPrice = effectivePrice;
+            await _cartRepository.UpdateItemAsync(existing, cancellationToken);
+            return Result.Success();
+        }
 
-        if (product.StockQuantity < totalQuantity)
+        var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == request.ProductId);
+        if (existingItem != null)
+            return await MergeIntoExistingAsync(existingItem);
+
+        if (product.StockQuantity < request.Quantity)
             return Result.Failure("Not enough stock available.");
 
-        if (existingItem != null)
+        try
         {
-            existingItem.Quantity = totalQuantity;
-            existingItem.UnitPrice = effectivePrice;
-            await _cartRepository.UpdateItemAsync(existingItem, cancellationToken);
-        }
-        else
-        {
-            var item = new CartItem
+            await _cartRepository.AddItemAsync(new CartItem
             {
                 CartId = cart.Id,
                 ProductId = request.ProductId,
                 Quantity = request.Quantity,
                 UnitPrice = effectivePrice
-            };
-            await _cartRepository.AddItemAsync(item, cancellationToken);
+            }, cancellationToken);
+            return Result.Success();
         }
-
-        return Result.Success();
+        catch (DuplicateEntityException)
+        {
+            // A concurrent request inserted this product first — reload and merge into that row.
+            var refreshed = request.UserId.HasValue
+                ? await _cartRepository.GetByUserIdAsync(request.UserId.Value, cancellationToken)
+                : await _cartRepository.GetBySessionIdAsync(request.SessionId!, cancellationToken);
+            var now = refreshed?.Items.FirstOrDefault(i => i.ProductId == request.ProductId);
+            if (now == null)
+                return Result.Failure("Could not add item to cart. Please try again.");
+            return await MergeIntoExistingAsync(now);
+        }
     }
 }

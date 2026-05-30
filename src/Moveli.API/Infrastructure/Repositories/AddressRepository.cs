@@ -49,14 +49,23 @@ public class AddressRepository : IAddressRepository
 
     public async Task ClearDefaultAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var defaults = await _context.Addresses
+        // Set-based update: atomic, no read-modify-write window.
+        await _context.Addresses
             .Where(a => a.UserId == userId && a.IsDefault)
-            .ToListAsync(cancellationToken);
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDefault, false), cancellationToken);
+    }
 
-        foreach (var a in defaults)
-            a.IsDefault = false;
-
-        if (defaults.Count > 0)
-            await _context.SaveChangesAsync(cancellationToken);
+    public async Task SetDefaultAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default)
+    {
+        // Clear-then-set as two set-based statements in one transaction. Concurrent calls
+        // serialize via row locks, so the result is always exactly one default.
+        await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+        await _context.Addresses
+            .Where(a => a.UserId == userId && a.IsDefault)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDefault, false), cancellationToken);
+        await _context.Addresses
+            .Where(a => a.Id == addressId && a.UserId == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDefault, true), cancellationToken);
+        await tx.CommitAsync(cancellationToken);
     }
 }

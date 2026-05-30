@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Moveli.API.Infrastructure.Data;
+using Moveli.Application.Common;
 using Moveli.Domain.Entities;
 using Moveli.Domain.Interfaces;
 
@@ -18,27 +19,94 @@ public class ProductRepository : IProductRepository
         int page, int pageSize,
         Guid? categoryId = null, Guid? brandId = null,
         decimal? minPrice = null, decimal? maxPrice = null,
+        decimal? minRating = null,
         string? search = null, string? sortBy = null,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.Products
-            .Include(p => p.Category)
-            .Include(p => p.Brand)
-            .Include(p => p.Images)
-            .Where(p => p.IsActive)
-            .AsQueryable();
-
-        if (categoryId.HasValue)
-            query = query.Where(p => p.CategoryId == categoryId.Value);
-
-        if (brandId.HasValue)
-            query = query.Where(p => p.BrandId == brandId.Value);
+        var query = ApplyFilters(
+            _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Brand)
+                .Include(p => p.Images)
+                .Where(p => p.IsActive),
+            categoryId, brandId, minRating, search);
 
         if (minPrice.HasValue)
             query = query.Where(p => p.Price >= minPrice.Value);
 
         if (maxPrice.HasValue)
             query = query.Where(p => p.Price <= maxPrice.Value);
+
+        query = sortBy?.ToLower() switch
+        {
+            "price_asc" => query.OrderBy(p => p.Price),
+            "price_desc" => query.OrderByDescending(p => p.Price),
+            "name" => query.OrderBy(p => p.Name.En),
+            "newest" => query.OrderByDescending(p => p.CreatedAt),
+            "rating" => query.OrderByDescending(p => p.Rating),
+            "reviews" => query.OrderByDescending(p => p.ReviewCount),
+            _ => query.OrderByDescending(p => p.CreatedAt)
+        };
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
+    public async Task<(decimal Min, decimal Max, IReadOnlyList<int> Buckets)> GetPriceHistogramAsync(
+        int buckets,
+        Guid? categoryId = null, Guid? brandId = null,
+        decimal? minRating = null, string? search = null,
+        CancellationToken cancellationToken = default)
+    {
+        buckets = Math.Clamp(buckets, 1, 32);
+
+        var query = ApplyFilters(
+            _context.Products.Where(p => p.IsActive),
+            categoryId, brandId, minRating, search);
+
+        // Fetch only the price column and bucket in memory: keeps the math identical across
+        // providers (SQLite in tests, Postgres in prod) and the per-filter catalog is modest.
+        var prices = await query.Select(p => p.Price).ToListAsync(cancellationToken);
+        var counts = new int[buckets];
+        if (prices.Count == 0)
+            return (0m, 0m, counts);
+
+        var min = prices.Min();
+        var max = prices.Max();
+        if (max == min)
+        {
+            counts[0] = prices.Count;
+            return (min, max, counts);
+        }
+
+        var size = (max - min) / buckets;
+        foreach (var price in prices)
+        {
+            var idx = (int)((price - min) / size);
+            if (idx >= buckets) idx = buckets - 1; // the max price lands in the final bucket
+            counts[idx]++;
+        }
+
+        return (min, max, counts);
+    }
+
+    private static IQueryable<Product> ApplyFilters(
+        IQueryable<Product> query,
+        Guid? categoryId, Guid? brandId, decimal? minRating, string? search)
+    {
+        if (categoryId.HasValue)
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+
+        if (brandId.HasValue)
+            query = query.Where(p => p.BrandId == brandId.Value);
+
+        if (minRating.HasValue)
+            query = query.Where(p => p.Rating >= minRating.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -50,23 +118,7 @@ public class ProductRepository : IProductRepository
                 p.Description.En.ToLower().Contains(term));
         }
 
-        query = sortBy?.ToLower() switch
-        {
-            "price_asc" => query.OrderBy(p => p.Price),
-            "price_desc" => query.OrderByDescending(p => p.Price),
-            "name" => query.OrderBy(p => p.Name.En),
-            "newest" => query.OrderByDescending(p => p.CreatedAt),
-            "rating" => query.OrderByDescending(p => p.Rating),
-            _ => query.OrderByDescending(p => p.CreatedAt)
-        };
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return (items, totalCount);
+        return query;
     }
 
     public async Task<Product?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
@@ -127,7 +179,14 @@ public class ProductRepository : IProductRepository
                 entry.State = EntityState.Added;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConcurrencyConflictException("This product was modified by someone else. Reload and try again.");
+        }
     }
 
     public async Task DeleteAsync(Product product, CancellationToken cancellationToken = default)

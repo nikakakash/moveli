@@ -8,7 +8,16 @@ public interface IProductRepository
         int page, int pageSize,
         Guid? categoryId = null, Guid? brandId = null,
         decimal? minPrice = null, decimal? maxPrice = null,
+        decimal? minRating = null,
         string? search = null, string? sortBy = null,
+        CancellationToken cancellationToken = default);
+
+    // Price distribution for the filter sidebar histogram. Respects every filter except
+    // price itself, so the bars show the full range the shopper can still choose from.
+    Task<(decimal Min, decimal Max, IReadOnlyList<int> Buckets)> GetPriceHistogramAsync(
+        int buckets,
+        Guid? categoryId = null, Guid? brandId = null,
+        decimal? minRating = null, string? search = null,
         CancellationToken cancellationToken = default);
 
     Task<Product?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);

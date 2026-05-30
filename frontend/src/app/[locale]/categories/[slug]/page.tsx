@@ -1,9 +1,14 @@
 import { StorefrontLayout } from "@/components/layout/storefront-layout";
 import { ProductListingContent } from "@/components/product/product-listing-content";
 import { getCategoryBySlug } from "@/lib/api/categories";
-import { getProducts } from "@/lib/api/products";
+import { getProducts, getPriceHistogram } from "@/lib/api/products";
 import { getBrands } from "@/lib/api/brands";
-import type { ProductListDto, BrandDto, CategoryDto } from "@/lib/api/types";
+import type {
+  ProductListDto,
+  BrandDto,
+  CategoryDto,
+  PriceHistogramDto,
+} from "@/lib/api/types";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -13,6 +18,7 @@ interface Props {
     brandId?: string;
     minPrice?: string;
     maxPrice?: string;
+    minRating?: string;
   }>;
 }
 
@@ -25,11 +31,12 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   let totalPages = 0;
   let brands: BrandDto[] = [];
   let category: CategoryDto | null = null;
+  let histogram: PriceHistogramDto | null = null;
   const page = Number(sp.page) || 1;
 
   try {
     category = await getCategoryBySlug(slug);
-    const [productsResult, brandsResult] = await Promise.all([
+    const [productsResult, brandsResult, histogramResult] = await Promise.all([
       getProducts({
         page,
         pageSize: 20,
@@ -37,14 +44,21 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         brandId: sp.brandId,
         minPrice: sp.minPrice ? Number(sp.minPrice) : undefined,
         maxPrice: sp.maxPrice ? Number(sp.maxPrice) : undefined,
+        minRating: sp.minRating ? Number(sp.minRating) : undefined,
         sortBy: sp.sortBy,
       }),
       getBrands(),
+      getPriceHistogram({
+        categoryId: category.id,
+        brandId: sp.brandId,
+        minRating: sp.minRating ? Number(sp.minRating) : undefined,
+      }),
     ]);
     products = productsResult.items;
     totalCount = productsResult.totalCount;
     totalPages = productsResult.totalPages;
     brands = brandsResult;
+    histogram = histogramResult;
   } catch {}
 
   return (
@@ -59,6 +73,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         currentSortBy={sp.sortBy}
         currentMinPrice={sp.minPrice}
         currentMaxPrice={sp.maxPrice}
+        currentMinRating={sp.minRating}
+        histogram={histogram}
         categoryName={
           category
             ? { ka: category.nameKa, en: category.nameEn }

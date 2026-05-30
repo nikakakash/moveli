@@ -34,7 +34,15 @@ public class AddToWishlistCommandHandler : IRequestHandler<AddToWishlistCommand,
             ProductId = request.ProductId
         };
 
-        await _wishlistRepository.AddAsync(wishlist, cancellationToken);
+        try
+        {
+            await _wishlistRepository.AddAsync(wishlist, cancellationToken);
+        }
+        catch (DuplicateEntityException)
+        {
+            // Concurrent add of the same product — already wishlisted, so this is a no-op success.
+        }
+
         return Result.Success();
     }
 }

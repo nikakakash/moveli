@@ -14,7 +14,10 @@
     "account": "ანგარიში",
     "logout": "გასვლა",
     "noSuggestions": "პროდუქტი ვერ მოიძებნა",
-    "viewAllResults": "ყველა შედეგის ნახვა"
+    "viewAllResults": "ყველა შედეგის ნახვა",
+    "recentSearches": "ბოლო ძიებები",
+    "trending": "პოპულარული",
+    "clearRecent": "გასუფთავება"
   },
   "home": {
     "heroTitle": "ყველაფერი ერთ",
@@ -56,8 +59,10 @@
     "priceAsc": "ფასი: დაბლიდან მაღლა",
     "priceDesc": "ფასი: მაღლიდან დაბლა",
     "newest": "უახლესი",
+    "mostReviewed": "ყველაზე შეფასებული",
     "popular": "პოპულარული",
     "price": "ფასი",
+    "rating": "შეფასება",
     "brand": "ბრენდი",
     "clearAll": "გასუფთავება",
     "results": "შედეგი",

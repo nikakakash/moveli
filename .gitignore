@@ -481,3 +481,6 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 CLAUDE.local.md
+
+# DataProtection key ring (machine-local secret, never commit)
+src/Moveli.API/keys/

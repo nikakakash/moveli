@@ -58,7 +58,16 @@ public class UpdateSettingsCommandHandler : IRequestHandler<UpdateSettingsComman
         s.AnnouncementEn = request.AnnouncementEn;
         s.AnnouncementKa = request.AnnouncementKa;
 
-        await _settingsRepository.UpdateAsync(s, cancellationToken);
+        try
+        {
+            await _settingsRepository.UpdateAsync(s, cancellationToken);
+        }
+        catch (ConcurrencyConflictException ex)
+        {
+            // The xmin token detected a concurrent admin save; ask the user to reload rather
+            // than silently overwrite the other change.
+            return Result<SettingsDto>.Failure(ex.Message);
+        }
 
         return Result<SettingsDto>.Success(new SettingsDto(
             s.StoreName, s.SupportEmail, s.SupportPhone, s.CurrencyCode,

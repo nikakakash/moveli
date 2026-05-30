@@ -38,7 +38,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         if (storedToken == null || storedToken.ExpiresAt < DateTime.UtcNow)
             return Result<AuthResponse>.Failure("Invalid or expired refresh token.");
 
-        storedToken.IsRevoked = true;
+        // Atomic single-use: the winner flips IsRevoked (1 row); a concurrent replay gets 0 and is
+        // rejected, so one stolen/duplicated token can never mint two valid token pairs.
+        var revoked = await _context.RefreshTokens
+            .Where(t => t.Id == storedToken.Id && !t.IsRevoked)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.IsRevoked, true), cancellationToken);
+        if (revoked == 0)
+            return Result<AuthResponse>.Failure("Invalid or expired refresh token.");
 
         var user = await _userManager.FindByIdAsync(storedToken.UserId.ToString());
         if (user == null)

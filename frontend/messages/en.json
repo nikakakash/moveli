@@ -14,7 +14,10 @@
     "account": "Account",
     "logout": "Sign out",
     "noSuggestions": "No matching products",
-    "viewAllResults": "View all results"
+    "viewAllResults": "View all results",
+    "recentSearches": "Recent searches",
+    "trending": "Trending",
+    "clearRecent": "Clear"
   },
   "home": {
     "heroTitle": "Everything in one",
@@ -56,8 +59,10 @@
     "priceAsc": "Price: low to high",
     "priceDesc": "Price: high to low",
     "newest": "Newest",
+    "mostReviewed": "Most reviewed",
     "popular": "Popular",
     "price": "Price",
+    "rating": "Rating",
     "brand": "Brand",
     "clearAll": "Clear all",
     "results": "results",

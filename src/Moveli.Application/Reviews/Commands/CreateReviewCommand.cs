@@ -50,7 +50,15 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, R
             IsApproved = false // pending admin moderation
         };
 
-        review = await _reviewRepository.AddAsync(review, cancellationToken);
+        try
+        {
+            review = await _reviewRepository.AddAsync(review, cancellationToken);
+        }
+        catch (DuplicateEntityException)
+        {
+            // A concurrent request slipped past the HasUserReviewed check; the unique index caught it.
+            return Result<ReviewDto>.Failure("You have already reviewed this product.");
+        }
 
         return Result<ReviewDto>.Success(new ReviewDto(
             review.Id, review.ProductId, review.UserId, review.Rating, review.Comment, review.IsApproved, review.CreatedAt));

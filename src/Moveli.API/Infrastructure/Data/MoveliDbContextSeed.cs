@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Moveli.API.Infrastructure.Identity;
 using Moveli.Domain.Entities;
 using Moveli.Domain.ValueObjects;
@@ -9,6 +10,13 @@ public static class MoveliDbContextSeed
 {
     public static async Task SeedAsync(MoveliDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<Guid>> roleManager)
     {
+        // Serialize seeding across instances: if two app instances boot together (load-balanced
+        // deploy) the loser waits on the advisory lock, then sees populated tables and skips —
+        // instead of crashing on a unique-slug/role violation. Lock releases on commit.
+        await using var tx = await context.Database.BeginTransactionAsync();
+        if (context.Database.IsNpgsql())
+            await context.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock(548273)");
+
         await SeedRolesAsync(roleManager);
         await SeedUsersAsync(userManager);
 
@@ -34,6 +42,15 @@ public static class MoveliDbContextSeed
             context.Products.AddRange(products);
             await context.SaveChangesAsync();
         }
+
+        // Seed the singleton settings row so SettingsRepository.GetAsync never races to create it.
+        if (!context.StoreSettings.Any())
+        {
+            context.StoreSettings.Add(new StoreSettings());
+            await context.SaveChangesAsync();
+        }
+
+        await tx.CommitAsync();
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole<Guid>> roleManager)

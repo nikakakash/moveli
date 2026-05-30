@@ -45,3 +45,8 @@ public record ProductImageDto(
     string? AltText,
     int SortOrder,
     bool IsMain);
+
+public record PriceHistogramDto(
+    decimal Min,
+    decimal Max,
+    IReadOnlyList<int> Buckets);

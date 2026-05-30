@@ -56,6 +56,12 @@ export interface ProductImageDto {
   isMain: boolean;
 }
 
+export interface PriceHistogramDto {
+  min: number;
+  max: number;
+  buckets: number[];
+}
+
 // Categories
 export interface CategoryDto {
   id: string;
