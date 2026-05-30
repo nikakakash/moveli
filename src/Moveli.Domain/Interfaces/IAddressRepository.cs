@@ -10,4 +10,7 @@ public interface IAddressRepository
     Task UpdateAsync(Address address, CancellationToken cancellationToken = default);
     Task DeleteAsync(Address address, CancellationToken cancellationToken = default);
     Task ClearDefaultAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    // Atomically make exactly one address the default for the user (clears others in the same transaction).
+    Task SetDefaultAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default);
 }

@@ -7,7 +7,8 @@ import { Link } from "@/i18n/navigation";
 import { useCartStore } from "@/stores/cart-store";
 import { useLocale } from "next-intl";
 import { Minus, Plus, Trash, ShoppingCart, Truck, Warning } from "@phosphor-icons/react";
-import { formatPrice, normalizeImageUrl } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
+import { resolveProductImage } from "@/lib/product-images";
 
 export function CartContent() {
   const t = useTranslations("cart");
@@ -53,7 +54,7 @@ export function CartContent() {
           {items.map((item) => {
             const name =
               locale === "ka" ? item.productNameKa : item.productNameEn;
-            const imgSrc = normalizeImageUrl(item.productImageUrl);
+            const imgSrc = resolveProductImage(item.productSlug, item.productImageUrl, 80);
             return (
               <div
                 key={item.id}

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Moveli.API.Infrastructure.Data;
+using Moveli.Application.Common;
 using Moveli.Domain.Entities;
 using Moveli.Domain.Interfaces;
 
@@ -37,7 +38,16 @@ public class WishlistRepository : IWishlistRepository
     public async Task<Wishlist> AddAsync(Wishlist wishlist, CancellationToken cancellationToken = default)
     {
         _context.Wishlists.Add(wishlist);
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbConcurrency.IsUniqueViolation(ex))
+        {
+            // Concurrent duplicate add for the same (UserId, ProductId) hit the unique index.
+            _context.Entry(wishlist).State = EntityState.Detached;
+            throw new DuplicateEntityException("Item already in wishlist.");
+        }
         return wishlist;
     }
 

@@ -4,8 +4,12 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { ProductCard } from "./product-card";
-import { Funnel, SortAscending, X } from "@phosphor-icons/react";
-import type { ProductListDto, BrandDto } from "@/lib/api/types";
+import { Funnel, Star, X } from "@phosphor-icons/react";
+import type {
+  ProductListDto,
+  BrandDto,
+  PriceHistogramDto,
+} from "@/lib/api/types";
 import { useState } from "react";
 
 interface Props {
@@ -19,8 +23,12 @@ interface Props {
   currentSortBy?: string;
   currentMinPrice?: string;
   currentMaxPrice?: string;
+  currentMinRating?: string;
+  histogram?: PriceHistogramDto | null;
   categoryName?: { ka: string; en: string };
 }
+
+const RATING_OPTIONS = [4.5, 4.0, 3.5];
 
 export function ProductListingContent({
   products,
@@ -33,6 +41,8 @@ export function ProductListingContent({
   currentSortBy,
   currentMinPrice,
   currentMaxPrice,
+  currentMinRating,
+  histogram,
   categoryName,
 }: Props) {
   const t = useTranslations("product");
@@ -63,7 +73,44 @@ export function ProductListingContent({
     router.push(pathname);
   };
 
-  const hasFilters = currentBrandId || currentMinPrice || currentMaxPrice;
+  const hasFilters =
+    currentBrandId || currentMinPrice || currentMaxPrice || currentMinRating;
+
+  const renderHistogram = () => {
+    if (!histogram || histogram.buckets.length === 0 || histogram.max <= histogram.min) {
+      return null;
+    }
+    const { min, max, buckets } = histogram;
+    const peak = Math.max(...buckets, 1);
+    const size = (max - min) / buckets.length;
+    const selMin = currentMinPrice ? Number(currentMinPrice) : min;
+    const selMax = currentMaxPrice ? Number(currentMaxPrice) : max;
+
+    return (
+      <div className="mt-3">
+        <div className="flex items-end gap-0.5 h-9">
+          {buckets.map((count, i) => {
+            const bandStart = min + i * size;
+            const bandEnd = bandStart + size;
+            const inRange = bandEnd >= selMin && bandStart <= selMax;
+            return (
+              <div
+                key={i}
+                className={`flex-1 rounded-sm ${
+                  inRange ? "bg-moveli-purple-400" : "bg-gray-200"
+                }`}
+                style={{ height: `${Math.max((count / peak) * 100, 4)}%` }}
+              />
+            );
+          })}
+        </div>
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <span>₾{Math.round(min)}</span>
+          <span>₾{Math.round(max)}+</span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -97,6 +144,7 @@ export function ProductListingContent({
             <option value="price_asc">{t("priceAsc")}</option>
             <option value="price_desc">{t("priceDesc")}</option>
             <option value="newest">{t("newest")}</option>
+            <option value="reviews">{t("mostReviewed")}</option>
           </select>
         </div>
       </div>
@@ -141,6 +189,49 @@ export function ProductListingContent({
                   }
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
                 />
+              </div>
+              {renderHistogram()}
+            </div>
+
+            {/* Rating */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                {t("rating")}
+              </h3>
+              <div className="space-y-1">
+                {RATING_OPTIONS.map((r) => {
+                  const value = String(r);
+                  const selected = currentMinRating === value;
+                  return (
+                    <button
+                      key={r}
+                      onClick={() =>
+                        updateParam("minRating", selected ? null : value)
+                      }
+                      className={`flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-sm transition ${
+                        selected
+                          ? "bg-moveli-purple-50 text-moveli-purple-700"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="flex gap-0.5">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <Star
+                            key={i}
+                            size={13}
+                            weight="fill"
+                            className={
+                              i < Math.floor(r)
+                                ? "text-amber-400"
+                                : "text-gray-200"
+                            }
+                          />
+                        ))}
+                      </span>
+                      <span className="font-medium">{r.toFixed(1)}+</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

@@ -13,6 +13,7 @@ public record GetProductsQuery(
     Guid? BrandId = null,
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
+    decimal? MinRating = null,
     string? Search = null,
     string? SortBy = null) : IRequest<Result<PagedResult<ProductListDto>>>;
 
@@ -33,6 +34,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, Result<
             request.Page, request.PageSize,
             request.CategoryId, request.BrandId,
             request.MinPrice, request.MaxPrice,
+            request.MinRating,
             request.Search, request.SortBy,
             cancellationToken);
 

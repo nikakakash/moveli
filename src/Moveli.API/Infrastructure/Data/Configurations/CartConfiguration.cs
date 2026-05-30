@@ -32,5 +32,8 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
             .WithMany()
             .HasForeignKey(ci => ci.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // One row per product per cart — prevents duplicate rows under concurrent add-to-cart.
+        builder.HasIndex(ci => new { ci.CartId, ci.ProductId }).IsUnique();
     }
 }

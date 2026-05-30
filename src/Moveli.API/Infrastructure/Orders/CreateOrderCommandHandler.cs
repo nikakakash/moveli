@@ -37,14 +37,14 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             if (cart == null || !cart.Items.Any())
                 return Result<OrderDto>.Failure("Cart is empty.");
 
-            foreach (var cartItem in cart.Items)
-            {
-                var product = await _context.Products.FindAsync([cartItem.ProductId], cancellationToken);
-                if (product == null || !product.IsActive)
-                    return Result<OrderDto>.Failure($"Product '{cartItem.Product.Name.En}' is no longer available.");
-                if (product.StockQuantity < cartItem.Quantity)
-                    return Result<OrderDto>.Failure($"Not enough stock for '{cartItem.Product.Name.En}'. Available: {product.StockQuantity}.");
-            }
+            // Consume the cart atomically up front: this is the idempotency gate. A concurrent
+            // duplicate checkout (double-click / retry) blocks here, then sees 0 rows deleted
+            // because the winner already emptied the cart — so it can never create a second order.
+            var consumed = await _context.Set<CartItem>()
+                .Where(i => i.CartId == cart.Id)
+                .ExecuteDeleteAsync(cancellationToken);
+            if (consumed == 0)
+                return Result<OrderDto>.Failure("This cart has already been checked out.");
 
             var orderNumber = await _orderRepository.GenerateOrderNumberAsync(cancellationToken);
 
@@ -68,6 +68,20 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
             foreach (var cartItem in cart.Items)
             {
+                // Atomic conditional decrement: the WHERE guard makes overselling impossible
+                // regardless of concurrency. 0 rows affected => gone, inactive, or insufficient stock.
+                var affected = await _context.Products
+                    .Where(p => p.Id == cartItem.ProductId
+                             && p.IsActive
+                             && p.StockQuantity >= cartItem.Quantity)
+                    .ExecuteUpdateAsync(
+                        s => s.SetProperty(p => p.StockQuantity, p => p.StockQuantity - cartItem.Quantity),
+                        cancellationToken);
+
+                if (affected == 0)
+                    return Result<OrderDto>.Failure(
+                        $"'{cartItem.Product.Name.En}' is unavailable or out of stock.");
+
                 order.Items.Add(new OrderItem
                 {
                     ProductId = cartItem.ProductId,
@@ -76,9 +90,6 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     UnitPrice = cartItem.UnitPrice,
                     Total = cartItem.UnitPrice * cartItem.Quantity
                 });
-
-                var product = await _context.Products.FindAsync([cartItem.ProductId], cancellationToken);
-                product!.StockQuantity -= cartItem.Quantity;
             }
 
             order.SubTotal = order.Items.Sum(i => i.Total);
@@ -112,9 +123,6 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
             _context.Orders.Add(order);
 
-            var cartItems = await _context.Set<CartItem>().Where(i => i.CartId == cart.Id).ToListAsync(cancellationToken);
-            _context.Set<CartItem>().RemoveRange(cartItems);
-
             await _context.SaveChangesAsync(cancellationToken);
 
             if (appliedPromo != null)
@@ -125,7 +133,16 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     UserId = request.UserId,
                     OrderId = order.Id
                 });
-                await _context.SaveChangesAsync(cancellationToken);
+                try
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateException ex) when (DbConcurrency.IsUniqueViolation(ex))
+                {
+                    // A concurrent order already redeemed this single-use code for the user.
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<OrderDto>.Failure("This promo code has already been used.");
+                }
             }
 
             await transaction.CommitAsync(cancellationToken);

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Moveli.API.Infrastructure.Data;
+using Moveli.Application.Common;
 using Moveli.Domain.Entities;
 using Moveli.Domain.Interfaces;
 
@@ -48,7 +49,16 @@ public class CartRepository : ICartRepository
     public async Task AddItemAsync(CartItem item, CancellationToken cancellationToken = default)
     {
         _context.Set<CartItem>().Add(item);
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbConcurrency.IsUniqueViolation(ex))
+        {
+            // Concurrent add for the same (CartId, ProductId) hit the unique index.
+            _context.Entry(item).State = EntityState.Detached;
+            throw new DuplicateEntityException("Item already in cart.");
+        }
     }
 
     public async Task UpdateItemAsync(CartItem item, CancellationToken cancellationToken = default)

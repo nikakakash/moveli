@@ -5,7 +5,8 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { Heart, Star } from "@phosphor-icons/react";
-import { formatPrice, getDiscountPercentage, normalizeImageUrl } from "@/lib/format";
+import { formatPrice, getDiscountPercentage } from "@/lib/format";
+import { resolveProductImage } from "@/lib/product-images";
 import type { ProductListDto } from "@/lib/api/types";
 
 interface ProductCardProps {
@@ -22,7 +23,7 @@ export function ProductCard({
   const locale = useLocale();
   const [imgError, setImgError] = useState(false);
   const name = locale === "ka" ? product.nameKa : product.nameEn;
-  const imageUrl = normalizeImageUrl(product.mainImageUrl);
+  const imageUrl = resolveProductImage(product.slug, product.mainImageUrl);
   const hasDiscount =
     product.compareAtPrice != null && product.compareAtPrice > product.price;
   const discount = hasDiscount

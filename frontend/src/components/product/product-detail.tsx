@@ -12,7 +12,8 @@ import {
   Minus,
   Plus,
 } from "@phosphor-icons/react";
-import { formatPrice, normalizeImageUrl } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
+import { resolveProductImage } from "@/lib/product-images";
 import { useCartStore } from "@/stores/cart-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { createReview } from "@/lib/api/reviews";
@@ -86,7 +87,7 @@ export function ProductDetail({ product, reviews }: Props) {
   const [allReviews, setAllReviews] = useState<ReviewDto[]>(reviews);
 
   const images = product.images.sort((a, b) => a.sortOrder - b.sortOrder);
-  const currentImage = normalizeImageUrl(images[selectedImage]?.url);
+  const currentImage = resolveProductImage(product.slug, images[selectedImage]?.url);
 
   const hasDiscount =
     product.compareAtPrice != null && product.compareAtPrice > product.price;
@@ -155,7 +156,7 @@ export function ProductDetail({ product, reviews }: Props) {
                     </div>
                   ) : (
                     <Image
-                      src={normalizeImageUrl(img.url) || img.url}
+                      src={resolveProductImage(product.slug, img.url, 64) || img.url}
                       alt={img.altText || name}
                       width={64}
                       height={64}

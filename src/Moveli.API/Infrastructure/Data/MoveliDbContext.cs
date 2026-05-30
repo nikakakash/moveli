@@ -32,6 +32,18 @@ public class MoveliDbContext : IdentityDbContext<ApplicationUser, IdentityRole<G
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(MoveliDbContext).Assembly);
+
+        // Optimistic concurrency on read-modify-write rows via Postgres's system "xmin" column.
+        // Npgsql special-cases this name, so the shadow property maps to the existing system
+        // column — no schema/migration. Guarded to Npgsql so SQLite (tests) stays token-free.
+        if (Database.IsNpgsql())
+        {
+            // Npgsql's concurrency-token convention detects a uint OnAddOrUpdate concurrency-token
+            // property and maps it to the xmin system column (excluded from migrations). Don't set
+            // column name/type — that defeats the convention and makes the differ emit AddColumn.
+            builder.Entity<Product>().Property<uint>("xmin").IsRowVersion();
+            builder.Entity<StoreSettings>().Property<uint>("xmin").IsRowVersion();
+        }
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

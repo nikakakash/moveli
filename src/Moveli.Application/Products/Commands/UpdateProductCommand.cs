@@ -88,7 +88,15 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
             }
         }
 
-        await _productRepository.UpdateAsync(product, cancellationToken);
+        try
+        {
+            await _productRepository.UpdateAsync(product, cancellationToken);
+        }
+        catch (ConcurrencyConflictException ex)
+        {
+            return Result.Failure(ex.Message);
+        }
+
         return Result.Success();
     }
 }

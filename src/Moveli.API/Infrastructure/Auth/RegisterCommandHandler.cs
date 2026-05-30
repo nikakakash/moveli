@@ -47,7 +47,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
             EmailConfirmed = true
         };
 
-        var result = await _userManager.CreateAsync(user, request.Password);
+        IdentityResult result;
+        try
+        {
+            result = await _userManager.CreateAsync(user, request.Password);
+        }
+        catch (DbUpdateException ex) when (DbConcurrency.IsUniqueViolation(ex))
+        {
+            // Two registrations with the same email raced past the FindByEmail check.
+            return Result<AuthResponse>.Failure("A user with this email already exists.");
+        }
         if (!result.Succeeded)
             return Result<AuthResponse>.Failure(string.Join("; ", result.Errors.Select(e => e.Description)));
 

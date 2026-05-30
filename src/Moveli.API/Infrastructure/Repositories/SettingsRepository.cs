@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Moveli.API.Infrastructure.Data;
+using Moveli.Application.Common;
 using Moveli.Domain.Entities;
 using Moveli.Domain.Interfaces;
 
@@ -33,6 +34,13 @@ public class SettingsRepository : ISettingsRepository
     public async Task UpdateAsync(StoreSettings settings, CancellationToken cancellationToken = default)
     {
         _context.StoreSettings.Update(settings);
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConcurrencyConflictException("Settings were changed by someone else. Reload and try again.");
+        }
     }
 }
