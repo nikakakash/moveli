@@ -6,7 +6,7 @@ import { Link } from "@/i18n/navigation";
 import type { CategoryTreeDto } from "@/lib/api/types";
 import Image from "next/image";
 
-// Curated Unsplash photo IDs per category slug, mirroring the design file's stock set.
+// Curated Unsplash photo IDs per category slug — fallback when no admin cover is uploaded.
 const CATEGORY_PHOTOS: Record<string, string> = {
   electronics: "1498049794561-7780e7231661",
   "mobile-phones": "1592286927505-1def25115558",
@@ -19,7 +19,7 @@ const CATEGORY_PHOTOS: Record<string, string> = {
   beauty: "1556228720-195a672e8a03",
 };
 
-// Emoji fallback when a category has neither a curated photo nor an uploaded image.
+// Emoji fallback when a category has neither an uploaded cover nor a curated photo.
 const CATEGORY_ICONS: Record<string, string> = {
   electronics: "💻",
   "mobile-phones": "📱",
@@ -44,30 +44,29 @@ export function CategoryGrid({
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
+    // Horizontal, scrollable strip. Admin-uploaded cover wins; curated Unsplash is the fallback.
+    <div className="flex gap-4 overflow-x-auto pb-2 snap-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {categories.map((cat) => {
         const name = locale === "ka" ? cat.nameKa : cat.nameEn;
         const icon = CATEGORY_ICONS[cat.slug] || "📦";
         const photoId = CATEGORY_PHOTOS[cat.slug];
-        const imageSrc = photoId ? unsplashSrc(photoId) : cat.imageUrl;
+        const imageSrc = cat.imageUrl ?? (photoId ? unsplashSrc(photoId) : null);
         const hasImage = imageSrc && !failedImages.has(imageSrc);
 
         return (
           <Link
             key={cat.id}
             href={`/categories/${cat.slug}`}
-            className="group relative aspect-square rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow"
+            className="group relative w-[150px] flex-shrink-0 snap-start aspect-square rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow"
           >
             {hasImage ? (
               <Image
                 src={imageSrc}
                 alt={name}
                 fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                sizes="150px"
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={() =>
-                  setFailedImages((s) => new Set(s).add(imageSrc))
-                }
+                onError={() => setFailedImages((s) => new Set(s).add(imageSrc))}
               />
             ) : (
               <div className="absolute inset-0 bg-moveli-gradient-soft flex items-center justify-center text-5xl">

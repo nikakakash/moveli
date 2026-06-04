@@ -339,6 +339,7 @@ export interface UpdateOrderStatusRequest {
 
 // Discounts
 export type DiscountScope = "Product" | "Category" | "Brand";
+export type DealPlacement = "None" | "DealsPage" | "FlashSale" | "Featured";
 
 export interface DiscountDto {
   id: string;
@@ -349,6 +350,12 @@ export interface DiscountDto {
   isActive: boolean;
   startsAt: string | null;
   endsAt: string | null;
+  titleKa: string;
+  titleEn: string;
+  imageUrl: string | null;
+  placement: DealPlacement;
+  showOnHome: boolean;
+  showCountdown: boolean;
 }
 
 export interface CreateDiscountRequest {
@@ -358,9 +365,33 @@ export interface CreateDiscountRequest {
   isActive: boolean;
   startsAt?: string | null;
   endsAt?: string | null;
+  titleKa?: string | null;
+  titleEn?: string | null;
+  imageUrl?: string | null;
+  placement: DealPlacement;
+  showOnHome: boolean;
+  showCountdown: boolean;
 }
 
 export interface UpdateDiscountRequest extends CreateDiscountRequest {}
+
+// Public deals (curated, live discounts with Placement != None)
+export interface DealDto {
+  id: string;
+  scope: DiscountScope;
+  targetId: string;
+  targetName: string;
+  percentage: number;
+  titleKa: string;
+  titleEn: string;
+  imageUrl: string | null;
+  placement: DealPlacement;
+  showOnHome: boolean;
+  showCountdown: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  product: ProductListDto | null;
+}
 
 // Promo Codes
 export type PromoDiscountType = "Percentage" | "FixedAmount";

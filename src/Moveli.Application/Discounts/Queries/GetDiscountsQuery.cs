@@ -50,7 +50,13 @@ public class GetDiscountsQueryHandler : IRequestHandler<GetDiscountsQuery, Resul
                 d.Percentage,
                 d.IsActive,
                 d.StartsAt,
-                d.EndsAt));
+                d.EndsAt,
+                d.Title.Ka,
+                d.Title.En,
+                d.ImageUrl,
+                d.Placement.ToString(),
+                d.ShowOnHome,
+                d.ShowCountdown));
         }
 
         return Result<List<DiscountDto>>.Success(dtos);

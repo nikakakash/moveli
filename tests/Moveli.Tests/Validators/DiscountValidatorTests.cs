@@ -9,7 +9,14 @@ public class CreateDiscountCommandValidatorTests
     private readonly CreateDiscountCommandValidator _validator = new();
 
     private static CreateDiscountCommand Valid() =>
-        new("Product", Guid.NewGuid(), 10, true, null, null);
+        new("Product", Guid.NewGuid(), 10, true, null, null, null, null, null, "None", false, false);
+
+    [Fact]
+    public void Fails_WhenPlacementUnknown()
+    {
+        _validator.TestValidate(Valid() with { Placement = "Banner" })
+            .ShouldHaveValidationErrorFor(x => x.Placement);
+    }
 
     [Fact]
     public void Passes_ForValidCommand()

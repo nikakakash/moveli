@@ -482,5 +482,21 @@ $RECYCLE.BIN/
 *.swp
 CLAUDE.local.md
 
-# DataProtection key ring (machine-local secret, never commit)
+
+api_run.log
+api_err.log
+api_output.log
+
+# Local dev secrets — must never be committed. Real secrets live in env vars in prod;
+# each developer keeps their own appsettings.Development.json untracked.
+src/Moveli.API/appsettings.Development.json
+
+# ASP.NET Core DataProtection key ring (machine-local cryptographic keys).
 src/Moveli.API/keys/
+
+# User-uploaded media dir (local dev only; prod uses object storage / shared volume).
+src/Moveli.API/uploads/
+
+# Any other appsettings.*.json variant a developer creates locally.
+src/Moveli.API/appsettings.Local.json
+src/Moveli.API/appsettings.*.local.json

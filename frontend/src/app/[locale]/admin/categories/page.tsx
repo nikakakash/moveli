@@ -6,11 +6,13 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  uploadImage,
 } from "@/lib/api/admin";
 import { apiFetch } from "@/lib/api/client";
+import { normalizeImageUrl } from "@/lib/format";
 import { toast } from "sonner";
 import type { CategoryTreeDto, CreateCategoryRequest } from "@/lib/api/types";
-import { Plus, PencilSimple, Trash, X } from "@phosphor-icons/react";
+import { Plus, PencilSimple, Trash, X, UploadSimple } from "@phosphor-icons/react";
 
 export default function AdminCategoriesPage() {
   const t = useTranslations("admin");
@@ -18,6 +20,7 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [form, setForm] = useState<CreateCategoryRequest>({
     nameKa: "",
     nameEn: "",
@@ -81,9 +84,26 @@ export default function AdminCategoriesPage() {
       slug: cat.slug,
       sortOrder: cat.sortOrder,
       isActive: cat.isActive,
+      imageUrl: cat.imageUrl ?? undefined,
     });
     setEditingId(cat.id);
     setShowForm(true);
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const { url } = await uploadImage(file);
+      setForm((prev) => ({ ...prev, imageUrl: url }));
+      toast.success("Cover uploaded");
+    } catch {
+      toast.error("Failed to upload cover");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -171,6 +191,38 @@ export default function AdminCategoriesPage() {
                 />
                 {t("active")}
               </label>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t("coverImage")}
+              </label>
+              <div className="flex items-center gap-3">
+                {form.imageUrl ? (
+                  <div className="relative group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={normalizeImageUrl(form.imageUrl) ?? form.imageUrl}
+                      alt=""
+                      className="w-24 h-24 rounded-lg object-cover border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, imageUrl: undefined })}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                    >
+                      <X size={10} weight="bold" />
+                    </button>
+                  </div>
+                ) : null}
+                <label className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-moveli-purple-400 transition">
+                  <input type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
+                  {isUploading ? (
+                    <span className="text-xs text-gray-400">...</span>
+                  ) : (
+                    <UploadSimple size={20} className="text-gray-400" />
+                  )}
+                </label>
+              </div>
             </div>
             <div className="col-span-2 flex gap-3">
               <button

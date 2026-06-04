@@ -7,19 +7,22 @@ import {
   createDiscount,
   updateDiscount,
   deleteDiscount,
+  uploadImage,
 } from "@/lib/api/admin";
 import { apiFetch } from "@/lib/api/client";
+import { normalizeImageUrl } from "@/lib/format";
 import { toast } from "sonner";
 import type {
   DiscountDto,
   DiscountScope,
+  DealPlacement,
   CreateDiscountRequest,
   PagedResult,
   ProductListDto,
   CategoryTreeDto,
   BrandDto,
 } from "@/lib/api/types";
-import { Plus, PencilSimple, Trash, X } from "@phosphor-icons/react";
+import { Plus, PencilSimple, Trash, X, UploadSimple } from "@phosphor-icons/react";
 
 interface TargetOption {
   id: string;
@@ -33,6 +36,12 @@ const emptyForm: CreateDiscountRequest = {
   isActive: true,
   startsAt: null,
   endsAt: null,
+  titleKa: "",
+  titleEn: "",
+  imageUrl: null,
+  placement: "None",
+  showOnHome: false,
+  showCountdown: false,
 };
 
 // "2026-05-29T14:30:00Z" -> "2026-05-29T14:30" for datetime-local inputs
@@ -59,6 +68,7 @@ export default function AdminDiscountsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [form, setForm] = useState<CreateDiscountRequest>(emptyForm);
 
   const [products, setProducts] = useState<TargetOption[]>([]);
@@ -159,9 +169,31 @@ export default function AdminDiscountsPage() {
       isActive: d.isActive,
       startsAt: toLocalInput(d.startsAt),
       endsAt: toLocalInput(d.endsAt),
+      titleKa: d.titleKa,
+      titleEn: d.titleEn,
+      imageUrl: d.imageUrl,
+      placement: d.placement,
+      showOnHome: d.showOnHome,
+      showCountdown: d.showCountdown,
     });
     setEditingId(d.id);
     setShowForm(true);
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const { url } = await uploadImage(file);
+      setForm((prev) => ({ ...prev, imageUrl: url }));
+      toast.success("Cover uploaded");
+    } catch {
+      toast.error("Failed to upload cover");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -302,6 +334,105 @@ export default function AdminDiscountsPage() {
                 onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
               />
+            </div>
+            {/* Deal / merchandising controls */}
+            <div className="col-span-2 border-t border-gray-100 pt-4 mt-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                {t("dealSettings")}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("dealPlacement")}
+                  </label>
+                  <select
+                    value={form.placement}
+                    onChange={(e) =>
+                      setForm({ ...form, placement: e.target.value as DealPlacement })
+                    }
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  >
+                    <option value="None">{t("placementNone")}</option>
+                    <option value="DealsPage">{t("placementDealsPage")}</option>
+                    <option value="FlashSale">{t("placementFlashSale")}</option>
+                    <option value="Featured">{t("placementFeatured")}</option>
+                  </select>
+                </div>
+                <div className="flex items-end gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.showOnHome}
+                      onChange={(e) => setForm({ ...form, showOnHome: e.target.checked })}
+                      className="accent-moveli-purple-500"
+                    />
+                    {t("showOnHome")}
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.showCountdown}
+                      onChange={(e) => setForm({ ...form, showCountdown: e.target.checked })}
+                      className="accent-moveli-purple-500"
+                    />
+                    {t("showCountdown")}
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("dealTitle")} (KA)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.titleKa ?? ""}
+                    onChange={(e) => setForm({ ...form, titleKa: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("dealTitle")} (EN)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.titleEn ?? ""}
+                    onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t("dealBanner")}
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {form.imageUrl ? (
+                      <div className="relative group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={normalizeImageUrl(form.imageUrl) ?? form.imageUrl}
+                          alt=""
+                          className="w-32 h-20 rounded-lg object-cover border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, imageUrl: null })}
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                        >
+                          <X size={10} weight="bold" />
+                        </button>
+                      </div>
+                    ) : null}
+                    <label className="w-32 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-moveli-purple-400 transition">
+                      <input type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
+                      {isUploading ? (
+                        <span className="text-xs text-gray-400">...</span>
+                      ) : (
+                        <UploadSimple size={20} className="text-gray-400" />
+                      )}
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="col-span-2 flex gap-3">
               <button

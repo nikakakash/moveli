@@ -26,6 +26,7 @@ docker compose up -d   # postgres + redis
 ## Workflow
 
 - After every backend change, run tests and update test coverage for affected code
+- Git: work directly on `master`. Never create branches; commit straight to `master` (only when explicitly asked to commit). This overrides the default "branch first" behavior.
 
 ## Architecture
 

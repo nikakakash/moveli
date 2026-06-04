@@ -13,7 +13,13 @@ public record CreateDiscountCommand(
     decimal Percentage,
     bool IsActive,
     DateTime? StartsAt,
-    DateTime? EndsAt) : IRequest<Result<Guid>>;
+    DateTime? EndsAt,
+    string? TitleKa,
+    string? TitleEn,
+    string? ImageUrl,
+    string Placement,
+    bool ShowOnHome,
+    bool ShowCountdown) : IRequest<Result<Guid>>;
 
 public class CreateDiscountCommandValidator : AbstractValidator<CreateDiscountCommand>
 {
@@ -27,6 +33,8 @@ public class CreateDiscountCommandValidator : AbstractValidator<CreateDiscountCo
             .GreaterThanOrEqualTo(x => x.StartsAt!.Value)
             .When(x => x.StartsAt.HasValue && x.EndsAt.HasValue)
             .WithMessage("End date must be after start date.");
+        RuleFor(x => x.Placement).Must(p => Enum.TryParse<DealPlacement>(p, true, out _))
+            .WithMessage("Placement must be None, DealsPage, FlashSale or Featured.");
     }
 }
 
@@ -50,7 +58,12 @@ public class CreateDiscountCommandHandler : IRequestHandler<CreateDiscountComman
             Percentage = request.Percentage,
             IsActive = request.IsActive,
             StartsAt = request.StartsAt?.ToUniversalTime(),
-            EndsAt = request.EndsAt?.ToUniversalTime()
+            EndsAt = request.EndsAt?.ToUniversalTime(),
+            Title = new Domain.ValueObjects.LocalizedString(request.TitleKa ?? "", request.TitleEn ?? ""),
+            ImageUrl = request.ImageUrl,
+            Placement = Enum.Parse<DealPlacement>(request.Placement, true),
+            ShowOnHome = request.ShowOnHome,
+            ShowCountdown = request.ShowCountdown
         };
 
         discount = await _discountRepository.AddAsync(discount, cancellationToken);

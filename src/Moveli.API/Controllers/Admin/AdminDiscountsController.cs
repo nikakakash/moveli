@@ -31,7 +31,9 @@ public class AdminDiscountsController : ControllerBase
     {
         var command = new CreateDiscountCommand(
             request.Scope, request.TargetId, request.Percentage,
-            request.IsActive, request.StartsAt, request.EndsAt);
+            request.IsActive, request.StartsAt, request.EndsAt,
+            request.TitleKa, request.TitleEn, request.ImageUrl,
+            request.Placement, request.ShowOnHome, request.ShowCountdown);
         var result = await _mediator.Send(command);
         return result.IsSuccess
             ? Ok(new { id = result.Value })
@@ -43,7 +45,9 @@ public class AdminDiscountsController : ControllerBase
     {
         var command = new UpdateDiscountCommand(
             id, request.Scope, request.TargetId, request.Percentage,
-            request.IsActive, request.StartsAt, request.EndsAt);
+            request.IsActive, request.StartsAt, request.EndsAt,
+            request.TitleKa, request.TitleEn, request.ImageUrl,
+            request.Placement, request.ShowOnHome, request.ShowCountdown);
         var result = await _mediator.Send(command);
         return result.IsSuccess ? NoContent() : BadRequest(new { error = result.Error });
     }

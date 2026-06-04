@@ -8,7 +8,13 @@ public record DiscountDto(
     decimal Percentage,
     bool IsActive,
     DateTime? StartsAt,
-    DateTime? EndsAt);
+    DateTime? EndsAt,
+    string TitleKa,
+    string TitleEn,
+    string? ImageUrl,
+    string Placement,
+    bool ShowOnHome,
+    bool ShowCountdown);
 
 public record CreateDiscountRequest(
     string Scope,
@@ -16,7 +22,13 @@ public record CreateDiscountRequest(
     decimal Percentage,
     bool IsActive,
     DateTime? StartsAt,
-    DateTime? EndsAt);
+    DateTime? EndsAt,
+    string? TitleKa = null,
+    string? TitleEn = null,
+    string? ImageUrl = null,
+    string Placement = "None",
+    bool ShowOnHome = false,
+    bool ShowCountdown = false);
 
 public record UpdateDiscountRequest(
     string Scope,
@@ -24,4 +36,10 @@ public record UpdateDiscountRequest(
     decimal Percentage,
     bool IsActive,
     DateTime? StartsAt,
-    DateTime? EndsAt);
+    DateTime? EndsAt,
+    string? TitleKa = null,
+    string? TitleEn = null,
+    string? ImageUrl = null,
+    string Placement = "None",
+    bool ShowOnHome = false,
+    bool ShowCountdown = false);
