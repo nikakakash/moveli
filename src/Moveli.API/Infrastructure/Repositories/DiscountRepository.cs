@@ -14,11 +14,15 @@ public class DiscountRepository : IDiscountRepository
         _context = context;
     }
 
-    public async Task<List<Discount>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<(List<Discount> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        return await _context.Discounts
-            .OrderByDescending(d => d.CreatedAt)
+        var query = _context.Discounts.OrderByDescending(d => d.CreatedAt);
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+        return (items, total);
     }
 
     public async Task<List<Discount>> GetLiveAsync(CancellationToken cancellationToken = default)
@@ -41,6 +45,13 @@ public class DiscountRepository : IDiscountRepository
         _context.Discounts.Add(discount);
         await _context.SaveChangesAsync(cancellationToken);
         return discount;
+    }
+
+    public async Task AddRangeAsync(IEnumerable<Discount> discounts, CancellationToken cancellationToken = default)
+    {
+        // Single SaveChanges so a bulk operation either fully commits or fully fails.
+        _context.Discounts.AddRange(discounts);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(Discount discount, CancellationToken cancellationToken = default)

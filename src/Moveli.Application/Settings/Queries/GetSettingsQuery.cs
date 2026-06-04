@@ -23,6 +23,8 @@ public class GetSettingsQueryHandler : IRequestHandler<GetSettingsQuery, Result<
         return Result<SettingsDto>.Success(new SettingsDto(
             s.StoreName, s.SupportEmail, s.SupportPhone, s.CurrencyCode,
             s.FreeShippingThreshold, s.ShippingCost, s.FreeShippingCity,
-            s.MaintenanceMode, s.AnnouncementEn, s.AnnouncementKa));
+            s.MaintenanceMode, s.AnnouncementEn, s.AnnouncementKa,
+            s.HeroImagePrimaryUrl, s.HeroImageSecondaryUrl,
+            s.DealsHeroImagePrimaryUrl, s.DealsHeroImageSecondaryUrl));
     }
 }

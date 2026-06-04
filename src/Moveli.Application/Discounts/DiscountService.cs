@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Caching.Memory;
+using Moveli.Application.Common;
 using Moveli.Domain.Enums;
 using Moveli.Domain.Interfaces;
 
@@ -6,14 +8,28 @@ namespace Moveli.Application.Discounts;
 public class DiscountService : IDiscountService
 {
     private readonly IDiscountRepository _discountRepository;
+    private readonly IMemoryCache _cache;
+    private readonly ICacheInvalidator _invalidator;
 
-    public DiscountService(IDiscountRepository discountRepository)
+    // Storefront hits this on every product list / detail page; rebuilding it per request
+    // hits the Discounts table N times a second on a busy listing. Cache with a 60s ceiling
+    // (in case a discount's StartsAt/EndsAt window opens) AND wire to ICacheInvalidator so
+    // admin mutations evict it instantly. Key is constant — one snapshot covers all callers.
+    private const string CacheKey = "discounts:snapshot";
+    private static readonly TimeSpan Ttl = TimeSpan.FromSeconds(60);
+
+    public DiscountService(IDiscountRepository discountRepository, IMemoryCache cache, ICacheInvalidator invalidator)
     {
         _discountRepository = discountRepository;
+        _cache = cache;
+        _invalidator = invalidator;
     }
 
     public async Task<DiscountSnapshot> CreateSnapshotAsync(CancellationToken cancellationToken = default)
     {
+        if (_cache.TryGetValue(CacheKey, out DiscountSnapshot? cached) && cached is not null)
+            return cached;
+
         var live = await _discountRepository.GetLiveAsync(cancellationToken);
 
         var byProduct = new Dictionary<Guid, decimal>();
@@ -37,6 +53,13 @@ public class DiscountService : IDiscountService
                 target[d.TargetId] = d.Percentage;
         }
 
-        return new DiscountSnapshot(byProduct, byCategory, byBrand);
+        var snapshot = new DiscountSnapshot(byProduct, byCategory, byBrand);
+
+        using var entry = _cache.CreateEntry(CacheKey);
+        entry.AbsoluteExpirationRelativeToNow = Ttl;
+        entry.AddExpirationToken(_invalidator.GetChangeToken(CacheInvalidatorScopes.Discounts));
+        entry.Value = snapshot;
+
+        return snapshot;
     }
 }

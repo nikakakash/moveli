@@ -122,12 +122,45 @@ export function deleteBrand(id: string) {
 }
 
 // Discounts
-export function getDiscounts() {
-  return apiFetch<DiscountDto[]>("/admin/discounts", { requireAuth: true });
+interface GetDiscountsParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export function getDiscounts(params: GetDiscountsParams = {}) {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", String(params.page));
+  if (params.pageSize) query.set("pageSize", String(params.pageSize));
+  return apiFetch<PagedResult<DiscountDto>>(`/admin/discounts?${query.toString()}`, {
+    requireAuth: true,
+  });
 }
 
 export function createDiscount(data: CreateDiscountRequest) {
   return apiFetch<{ id: string }>("/admin/discounts", {
+    method: "POST",
+    body: data,
+    requireAuth: true,
+  });
+}
+
+interface BulkCreateProductDiscountsRequest {
+  productIds: string[];
+  percentage: number;
+  isActive: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  titleKa?: string | null;
+  titleEn?: string | null;
+  imageUrl?: string | null;
+  placement?: string;
+  showOnHome?: boolean;
+  showCountdown?: boolean;
+}
+
+/** Apply one common discount config to N products in a single atomic call. */
+export function bulkCreateProductDiscounts(data: BulkCreateProductDiscountsRequest) {
+  return apiFetch<{ created: number }>("/admin/discounts/bulk", {
     method: "POST",
     body: data,
     requireAuth: true,
@@ -150,8 +183,18 @@ export function deleteDiscount(id: string) {
 }
 
 // Promo Codes
-export function getPromoCodes() {
-  return apiFetch<PromoCodeDto[]>("/admin/promo-codes", { requireAuth: true });
+interface GetPromoCodesParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export function getPromoCodes(params: GetPromoCodesParams = {}) {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", String(params.page));
+  if (params.pageSize) query.set("pageSize", String(params.pageSize));
+  return apiFetch<PagedResult<PromoCodeDto>>(`/admin/promo-codes?${query.toString()}`, {
+    requireAuth: true,
+  });
 }
 
 export function createPromoCode(data: CreatePromoCodeRequest) {

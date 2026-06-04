@@ -58,8 +58,28 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// In-process cache for read-mostly reference data (categories, brands, featured products)
+// In-process cache for read-mostly reference data (categories, brands, featured products).
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<Moveli.Application.Common.ICacheInvalidator, Moveli.API.Infrastructure.Caching.CacheInvalidator>();
+
+// Distributed cache abstraction: Redis when configured (multi-instance), otherwise an
+// in-process distributed-memory backend so DI consumers can depend on IDistributedCache
+// today without code changes when you scale out later.
+var redisConn = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConn))
+{
+    builder.Services.AddStackExchangeRedisCache(o =>
+    {
+        o.Configuration = redisConn;
+        // Per-deploy keyspace prefix prevents stale entries from a previous version from
+        // poisoning a new deploy when Redis is shared across environments/instances.
+        o.InstanceName = $"moveli:{builder.Environment.EnvironmentName}:";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
 
 // Persist DataProtection keys so antiforgery / auth payloads survive restarts and can be
 // shared across instances when scaling out. Defaults to a folder under the content root;
@@ -82,7 +102,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 // Health checks for LB / orchestrator probes.
 builder.Services.AddHealthChecks()
-    .AddCheck<DatabaseHealthCheck>("database");
+    .AddCheck<DatabaseHealthCheck>("database")
+    .AddCheck<DistributedCacheHealthCheck>("cache", tags: new[] { "cache" });
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -161,6 +182,13 @@ using (var scope = app.Services.CreateScope())
 app.UseForwardedHeaders();
 
 // Security response headers on every response.
+var isDev = app.Environment.IsDevelopment();
+// Conservative CSP: the API serves JSON and a Swagger UI (dev only); never inline HTML to
+// end users — the frontend is a separate Next.js origin. We allow self for everything,
+// data: for Swagger asset URIs, and 'unsafe-inline' for Swagger UI script/style only in dev.
+var csp = isDev
+    ? "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    : "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests";
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
@@ -168,6 +196,8 @@ app.Use(async (context, next) =>
     headers["X-Frame-Options"] = "DENY";
     headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     headers["X-XSS-Protection"] = "0";
+    headers["Content-Security-Policy"] = csp;
+    headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=(), payment=()";
     await next();
 });
 

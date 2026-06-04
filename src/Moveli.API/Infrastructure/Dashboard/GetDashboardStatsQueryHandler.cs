@@ -39,12 +39,17 @@ public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQu
             .ToListAsync(cancellationToken);
 
         // Top products by number of order items — aggregated in the database (single round-trip).
-        var topProducts = await _context.Set<Domain.Entities.OrderItem>()
+        // EF Core 9 can't translate a record constructor inside GroupBy/Select, so we project to
+        // an anonymous type for the SQL, then materialize records in memory.
+        var topProductRows = await _context.Set<Domain.Entities.OrderItem>()
             .GroupBy(oi => new { oi.ProductId, oi.ProductName })
-            .Select(g => new TopProductDto(g.Key.ProductId, g.Key.ProductName, g.Key.ProductName, g.Count()))
+            .Select(g => new { g.Key.ProductId, g.Key.ProductName, OrderCount = g.Count() })
             .OrderByDescending(x => x.OrderCount)
             .Take(10)
             .ToListAsync(cancellationToken);
+        var topProducts = topProductRows
+            .Select(r => new TopProductDto(r.ProductId, r.ProductName, r.ProductName, r.OrderCount))
+            .ToList();
 
         var lowStockProducts = await _context.Products
             .Where(p => p.StockQuantity < 10 && p.IsActive)

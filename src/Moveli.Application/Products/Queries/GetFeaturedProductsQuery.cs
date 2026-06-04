@@ -14,15 +14,18 @@ public class GetFeaturedProductsQueryHandler : IRequestHandler<GetFeaturedProduc
     private readonly IProductRepository _productRepository;
     private readonly IDiscountService _discountService;
     private readonly IMemoryCache _cache;
+    private readonly ICacheInvalidator _invalidator;
 
     public GetFeaturedProductsQueryHandler(
         IProductRepository productRepository,
         IDiscountService discountService,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        ICacheInvalidator invalidator)
     {
         _productRepository = productRepository;
         _discountService = discountService;
         _cache = cache;
+        _invalidator = invalidator;
     }
 
     public async Task<Result<List<ProductListDto>>> Handle(GetFeaturedProductsQuery request, CancellationToken cancellationToken)
@@ -30,6 +33,8 @@ public class GetFeaturedProductsQueryHandler : IRequestHandler<GetFeaturedProduc
         var dtos = await _cache.GetOrCreateAsync(CacheKeys.FeaturedProducts(request.Count), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheKeys.FeaturedProductsTtl;
+            // Lets product/discount mutations evict every count-keyed featured entry at once.
+            entry.AddExpirationToken(_invalidator.GetChangeToken(CacheInvalidatorScopes.FeaturedProducts));
 
             var products = await _productRepository.GetFeaturedAsync(request.Count, cancellationToken);
             var discounts = await _discountService.CreateSnapshotAsync(cancellationToken);

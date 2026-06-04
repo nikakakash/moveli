@@ -14,11 +14,25 @@ import type { DealDto, PagedResult, ProductListDto } from "@/lib/api/types";
 interface Props {
   deals: DealDto[];
   initialProducts: PagedResult<ProductListDto>;
+  /** Admin-uploaded large photo for the hero collage. Falls back to a curated default. */
+  heroPrimaryImageUrl?: string | null;
+  /** Admin-uploaded small photo for the hero collage. */
+  heroSecondaryImageUrl?: string | null;
 }
 
 const PAGE_SIZE = 10;
 
-export function DealsContent({ deals, initialProducts }: Props) {
+// Curated Unsplash fallbacks for the deals hero (mirroring claude design/screen-deals.jsx
+// which used a Nike sneaker + an iPhone 11 photo).
+const FALLBACK_PRIMARY = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&h=600&q=85";
+const FALLBACK_SECONDARY = "https://images.unsplash.com/photo-1592286927505-1def25115558?auto=format&fit=crop&w=600&h=600&q=85";
+
+export function DealsContent({
+  deals,
+  initialProducts,
+  heroPrimaryImageUrl,
+  heroSecondaryImageUrl,
+}: Props) {
   const t = useTranslations("deals");
   const locale = useLocale();
 
@@ -92,15 +106,21 @@ export function DealsContent({ deals, initialProducts }: Props) {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-10">
-      {/* Hero */}
+      {/* Hero — 2-column grid mirroring the home hero pattern, but in the deep
+          Black-Friday purple from the design. Right column hides on mobile so the
+          copy + countdown get full width. */}
       <section
-        className="relative overflow-hidden rounded-2xl p-8 md:p-12 text-white"
+        className="relative overflow-hidden rounded-2xl p-8 md:p-12 text-white grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 items-center min-h-[360px]"
         style={{
           background:
-            "linear-gradient(120deg, #8B7DD8 0%, #7BC8E6 60%, #8FD7E9 100%)",
+            "linear-gradient(120deg, #2A226B 0%, #44389A 45%, #4099C2 100%)",
         }}
       >
-        <div className="absolute -top-20 -right-16 w-72 h-72 rounded-full bg-white/15 blur-2xl" />
+        {/* Glow / radial accents */}
+        <div className="absolute -top-20 -right-16 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-moveli-cyan-400/15 blur-3xl pointer-events-none" />
+
+        {/* Copy + countdown */}
         <div className="relative z-10 max-w-2xl">
           <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-sm font-medium">
             <Lightning size={14} weight="fill" /> {t("badge")}
@@ -114,6 +134,47 @@ export function DealsContent({ deals, initialProducts }: Props) {
               <CountdownTimer endsAt={hero.endsAt} variant="hero" />
             </div>
           )}
+        </div>
+
+        {/* Image cluster — hidden on small screens. Same overlapping-rotated-cards
+            language as the home hero, but flipped: the iPhone (secondary) is the
+            *bigger* card sitting behind, the sneaker (primary) sits in front. */}
+        <div className="relative hidden lg:block h-[340px]">
+          {/* Soft glow behind the photos. */}
+          <div
+            className="absolute right-0 top-0 w-[320px] h-[320px] rounded-full pointer-events-none blur-3xl"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(255,255,255,0.18), rgba(64,153,194,0.05) 70%)",
+            }}
+          />
+
+          {/* Secondary photo (large, behind) — iPhone in the design. Slight CCW tilt. */}
+          <div className="absolute right-2 top-2 w-[280px] h-[280px] rounded-2xl overflow-hidden shadow-2xl -rotate-6">
+            <Image
+              src={heroSecondaryImageUrl || FALLBACK_SECONDARY}
+              alt=""
+              width={560}
+              height={560}
+              className="w-full h-full object-cover"
+              priority
+              unoptimized={(heroSecondaryImageUrl ?? "").startsWith("/uploads/")}
+            />
+          </div>
+
+          {/* Primary photo (small, in front) — Nike shoe in the design. Slight CW tilt,
+              white frame so it pops against both the iPhone and the dark gradient. */}
+          <div className="absolute right-[210px] top-[110px] w-[170px] h-[170px] rounded-xl overflow-hidden shadow-2xl rotate-[6deg] border-4 border-white">
+            <Image
+              src={heroPrimaryImageUrl || FALLBACK_PRIMARY}
+              alt=""
+              width={340}
+              height={340}
+              className="w-full h-full object-cover"
+              priority
+              unoptimized={(heroPrimaryImageUrl ?? "").startsWith("/uploads/")}
+            />
+          </div>
         </div>
       </section>
 

@@ -11,6 +11,7 @@ import type {
   PagedResult,
 } from "@/lib/api/types";
 import { ArrowLeft } from "@phosphor-icons/react";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 
 export default function AdminCustomersPage() {
   const t = useTranslations("admin");
@@ -18,6 +19,7 @@ export default function AdminCustomersPage() {
   const [data, setData] = useState<PagedResult<AdminCustomerDto> | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<AdminCustomerDetailDto | null>(null);
 
@@ -26,7 +28,7 @@ export default function AdminCustomersPage() {
     try {
       const result = await getAdminCustomers({
         page,
-        pageSize: 20,
+        pageSize,
         search: search || undefined,
       });
       setData(result);
@@ -35,7 +37,7 @@ export default function AdminCustomersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, pageSize, search]);
 
   useEffect(() => {
     fetchCustomers();
@@ -196,21 +198,19 @@ export default function AdminCustomersPage() {
         </table>
       </div>
 
-      {data && data.totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
-          {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`w-9 h-9 rounded-lg text-sm font-medium ${
-                p === page
-                  ? "bg-moveli-gradient text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+      {data && (
+        <div className="mt-6 bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <AdminPagination
+            page={page}
+            pageSize={pageSize}
+            totalCount={data.totalCount}
+            totalPages={data.totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </div>
       )}
     </div>

@@ -42,10 +42,12 @@ public class UpdateDiscountCommandValidator : AbstractValidator<UpdateDiscountCo
 public class UpdateDiscountCommandHandler : IRequestHandler<UpdateDiscountCommand, Result>
 {
     private readonly IDiscountRepository _discountRepository;
+    private readonly ICacheInvalidator _invalidator;
 
-    public UpdateDiscountCommandHandler(IDiscountRepository discountRepository)
+    public UpdateDiscountCommandHandler(IDiscountRepository discountRepository, ICacheInvalidator invalidator)
     {
         _discountRepository = discountRepository;
+        _invalidator = invalidator;
     }
 
     public async Task<Result> Handle(UpdateDiscountCommand request, CancellationToken cancellationToken)
@@ -67,6 +69,8 @@ public class UpdateDiscountCommandHandler : IRequestHandler<UpdateDiscountComman
         discount.ShowCountdown = request.ShowCountdown;
 
         await _discountRepository.UpdateAsync(discount, cancellationToken);
+        _invalidator.Invalidate(CacheInvalidatorScopes.FeaturedProducts);
+        _invalidator.Invalidate(CacheInvalidatorScopes.Discounts);
         return Result.Success();
     }
 }

@@ -46,10 +46,12 @@ public class UpdateProductCommandValidator : AbstractValidator<UpdateProductComm
 public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Result>
 {
     private readonly IProductRepository _productRepository;
+    private readonly ICacheInvalidator _invalidator;
 
-    public UpdateProductCommandHandler(IProductRepository productRepository)
+    public UpdateProductCommandHandler(IProductRepository productRepository, ICacheInvalidator invalidator)
     {
         _productRepository = productRepository;
+        _invalidator = invalidator;
     }
 
     public async Task<Result> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
@@ -97,6 +99,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
             return Result.Failure(ex.Message);
         }
 
+        _invalidator.Invalidate(CacheInvalidatorScopes.FeaturedProducts);
         return Result.Success();
     }
 }

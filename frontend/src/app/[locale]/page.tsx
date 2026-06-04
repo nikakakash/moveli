@@ -7,6 +7,7 @@ import { TrustStrip } from "@/components/home/trust-strip";
 import { getFeaturedProducts } from "@/lib/api/products";
 import { getCategoryTree } from "@/lib/api/categories";
 import { getDeals } from "@/lib/api/deals";
+import { getPublicSettings } from "@/lib/api/settings";
 import { DealsSection } from "@/components/home/deals-section";
 
 export default async function HomePage() {
@@ -15,12 +16,14 @@ export default async function HomePage() {
   let featuredProducts: Awaited<ReturnType<typeof getFeaturedProducts>> = [];
   let categories: Awaited<ReturnType<typeof getCategoryTree>> = [];
   let deals: Awaited<ReturnType<typeof getDeals>> = [];
+  let settings: Awaited<ReturnType<typeof getPublicSettings>> | null = null;
 
   try {
-    [featuredProducts, categories, deals] = await Promise.all([
+    [featuredProducts, categories, deals, settings] = await Promise.all([
       getFeaturedProducts(10),
       getCategoryTree(),
       getDeals({ home: true }),
+      getPublicSettings(),
     ]);
   } catch {
     // API might not be running during build
@@ -28,7 +31,10 @@ export default async function HomePage() {
 
   return (
     <StorefrontLayout>
-      <HeroSection />
+      <HeroSection
+        primaryImageUrl={settings?.heroImagePrimaryUrl ?? null}
+        secondaryImageUrl={settings?.heroImageSecondaryUrl ?? null}
+      />
 
       {categories.length > 0 && (
         <section className="max-w-7xl mx-auto px-6 py-12">

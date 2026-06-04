@@ -43,3 +43,16 @@ public record UpdateDiscountRequest(
     string Placement = "None",
     bool ShowOnHome = false,
     bool ShowCountdown = false);
+
+public record BulkCreateProductDiscountsRequest(
+    Guid[] ProductIds,
+    decimal Percentage,
+    bool IsActive,
+    DateTime? StartsAt,
+    DateTime? EndsAt,
+    string? TitleKa = null,
+    string? TitleEn = null,
+    string? ImageUrl = null,
+    string Placement = "None",
+    bool ShowOnHome = false,
+    bool ShowCountdown = false);

@@ -9,10 +9,12 @@ public record DeleteProductCommand(Guid Id) : IRequest<Result>;
 public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, Result>
 {
     private readonly IProductRepository _productRepository;
+    private readonly ICacheInvalidator _invalidator;
 
-    public DeleteProductCommandHandler(IProductRepository productRepository)
+    public DeleteProductCommandHandler(IProductRepository productRepository, ICacheInvalidator invalidator)
     {
         _productRepository = productRepository;
+        _invalidator = invalidator;
     }
 
     public async Task<Result> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
@@ -22,6 +24,7 @@ public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand,
             return Result.Failure("Product not found.");
 
         await _productRepository.DeleteAsync(product, cancellationToken);
+        _invalidator.Invalidate(CacheInvalidatorScopes.FeaturedProducts);
         return Result.Success();
     }
 }

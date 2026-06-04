@@ -28,6 +28,7 @@ import {
   PencilSimple,
   UploadSimple,
 } from "@phosphor-icons/react";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 
 const emptyForm: CreateProductRequest = {
   nameKa: "",
@@ -51,6 +52,7 @@ export default function AdminProductsPage() {
   const [data, setData] = useState<PagedResult<ProductListDto> | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
@@ -67,7 +69,7 @@ export default function AdminProductsPage() {
     try {
       const query = new URLSearchParams();
       query.set("page", String(page));
-      query.set("pageSize", "20");
+      query.set("pageSize", String(pageSize));
       if (search) query.set("search", search);
       const result = await apiFetch<PagedResult<ProductListDto>>(
         `/products?${query.toString()}`
@@ -78,7 +80,7 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, pageSize, search]);
 
   const fetchFormData = useCallback(async () => {
     try {
@@ -694,23 +696,19 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      {data && data.totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
-          {Array.from({ length: data.totalPages }, (_, i) => i + 1).map(
-            (p) => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`w-9 h-9 rounded-lg text-sm font-medium ${
-                  p === page
-                    ? "bg-moveli-gradient text-white"
-                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {p}
-              </button>
-            )
-          )}
+      {data && (
+        <div className="mt-6 bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <AdminPagination
+            page={page}
+            pageSize={pageSize}
+            totalCount={data.totalCount}
+            totalPages={data.totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </div>
       )}
     </div>

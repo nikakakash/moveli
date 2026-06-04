@@ -5,9 +5,9 @@ using Moveli.Domain.Interfaces;
 
 namespace Moveli.Application.PromoCodes.Queries;
 
-public record GetPromoCodesQuery : IRequest<Result<List<PromoCodeDto>>>;
+public record GetPromoCodesQuery(int Page = 1, int PageSize = 20) : IRequest<Result<PagedResult<PromoCodeDto>>>;
 
-public class GetPromoCodesQueryHandler : IRequestHandler<GetPromoCodesQuery, Result<List<PromoCodeDto>>>
+public class GetPromoCodesQueryHandler : IRequestHandler<GetPromoCodesQuery, Result<PagedResult<PromoCodeDto>>>
 {
     private readonly IPromoCodeRepository _repository;
 
@@ -16,25 +16,25 @@ public class GetPromoCodesQueryHandler : IRequestHandler<GetPromoCodesQuery, Res
         _repository = repository;
     }
 
-    public async Task<Result<List<PromoCodeDto>>> Handle(GetPromoCodesQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResult<PromoCodeDto>>> Handle(GetPromoCodesQuery request, CancellationToken cancellationToken)
     {
-        var promoCodes = await _repository.GetAllAsync(cancellationToken);
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
+        var (promoCodes, total) = await _repository.GetPagedAsync(page, pageSize, cancellationToken);
         var redemptionCounts = await _repository.GetRedemptionCountsAsync(cancellationToken);
 
-        var dtos = new List<PromoCodeDto>(promoCodes.Count);
-        foreach (var p in promoCodes)
-        {
-            dtos.Add(new PromoCodeDto(
-                p.Id,
-                p.Code,
-                p.Type,
-                p.Value,
-                p.IsActive,
-                p.StartsAt,
-                p.EndsAt,
-                redemptionCounts.GetValueOrDefault(p.Id)));
-        }
+        var dtos = promoCodes.Select(p => new PromoCodeDto(
+            p.Id,
+            p.Code,
+            p.Type,
+            p.Value,
+            p.IsActive,
+            p.StartsAt,
+            p.EndsAt,
+            redemptionCounts.GetValueOrDefault(p.Id))).ToList();
 
-        return Result<List<PromoCodeDto>>.Success(dtos);
+        return Result<PagedResult<PromoCodeDto>>.Success(
+            new PagedResult<PromoCodeDto>(dtos, total, page, pageSize));
     }
 }

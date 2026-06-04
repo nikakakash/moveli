@@ -16,6 +16,7 @@ import type {
   PromoDiscountType,
 } from "@/lib/api/types";
 import { Plus, PencilSimple, Trash, X } from "@phosphor-icons/react";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 
 const emptyForm: CreatePromoCodeRequest = {
   code: "",
@@ -41,6 +42,10 @@ function fromDateInput(value: string | null | undefined): string | null {
 export default function AdminPromoCodesPage() {
   const t = useTranslations("admin");
   const [codes, setCodes] = useState<PromoCodeDto[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -48,14 +53,16 @@ export default function AdminPromoCodesPage() {
 
   const fetchCodes = useCallback(async () => {
     try {
-      const data = await getPromoCodes();
-      setCodes(data);
+      const data = await getPromoCodes({ page, pageSize });
+      setCodes(data.items);
+      setTotalCount(data.totalCount);
+      setTotalPages(data.totalPages);
     } catch {
       toast.error("Failed to load promo codes");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, pageSize]);
 
   useEffect(() => {
     fetchCodes();
@@ -351,6 +358,17 @@ export default function AdminPromoCodesPage() {
             )}
           </tbody>
         </table>
+        <AdminPagination
+          page={page}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => {
+            setPageSize(n);
+            setPage(1);
+          }}
+        />
       </div>
     </div>
   );

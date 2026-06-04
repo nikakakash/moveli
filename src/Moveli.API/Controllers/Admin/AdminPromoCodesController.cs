@@ -20,9 +20,9 @@ public class AdminPromoCodesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _mediator.Send(new GetPromoCodesQuery());
+        var result = await _mediator.Send(new GetPromoCodesQuery(page, pageSize));
         return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 

@@ -16,7 +16,11 @@ public record UpdateSettingsCommand(
     string FreeShippingCity,
     bool MaintenanceMode,
     string? AnnouncementEn,
-    string? AnnouncementKa) : IRequest<Result<SettingsDto>>;
+    string? AnnouncementKa,
+    string? HeroImagePrimaryUrl,
+    string? HeroImageSecondaryUrl,
+    string? DealsHeroImagePrimaryUrl,
+    string? DealsHeroImageSecondaryUrl) : IRequest<Result<SettingsDto>>;
 
 public class UpdateSettingsCommandValidator : AbstractValidator<UpdateSettingsCommand>
 {
@@ -31,16 +35,22 @@ public class UpdateSettingsCommandValidator : AbstractValidator<UpdateSettingsCo
         RuleFor(x => x.FreeShippingCity).MaximumLength(100);
         RuleFor(x => x.AnnouncementEn).MaximumLength(500);
         RuleFor(x => x.AnnouncementKa).MaximumLength(500);
+        RuleFor(x => x.HeroImagePrimaryUrl).MaximumLength(500);
+        RuleFor(x => x.HeroImageSecondaryUrl).MaximumLength(500);
+        RuleFor(x => x.DealsHeroImagePrimaryUrl).MaximumLength(500);
+        RuleFor(x => x.DealsHeroImageSecondaryUrl).MaximumLength(500);
     }
 }
 
 public class UpdateSettingsCommandHandler : IRequestHandler<UpdateSettingsCommand, Result<SettingsDto>>
 {
     private readonly ISettingsRepository _settingsRepository;
+    private readonly ICacheInvalidator _invalidator;
 
-    public UpdateSettingsCommandHandler(ISettingsRepository settingsRepository)
+    public UpdateSettingsCommandHandler(ISettingsRepository settingsRepository, ICacheInvalidator invalidator)
     {
         _settingsRepository = settingsRepository;
+        _invalidator = invalidator;
     }
 
     public async Task<Result<SettingsDto>> Handle(UpdateSettingsCommand request, CancellationToken cancellationToken)
@@ -57,6 +67,10 @@ public class UpdateSettingsCommandHandler : IRequestHandler<UpdateSettingsComman
         s.MaintenanceMode = request.MaintenanceMode;
         s.AnnouncementEn = request.AnnouncementEn;
         s.AnnouncementKa = request.AnnouncementKa;
+        s.HeroImagePrimaryUrl = request.HeroImagePrimaryUrl;
+        s.HeroImageSecondaryUrl = request.HeroImageSecondaryUrl;
+        s.DealsHeroImagePrimaryUrl = request.DealsHeroImagePrimaryUrl;
+        s.DealsHeroImageSecondaryUrl = request.DealsHeroImageSecondaryUrl;
 
         try
         {
@@ -69,9 +83,13 @@ public class UpdateSettingsCommandHandler : IRequestHandler<UpdateSettingsComman
             return Result<SettingsDto>.Failure(ex.Message);
         }
 
+        _invalidator.Invalidate(CacheInvalidatorScopes.Settings);
+
         return Result<SettingsDto>.Success(new SettingsDto(
             s.StoreName, s.SupportEmail, s.SupportPhone, s.CurrencyCode,
             s.FreeShippingThreshold, s.ShippingCost, s.FreeShippingCity,
-            s.MaintenanceMode, s.AnnouncementEn, s.AnnouncementKa));
+            s.MaintenanceMode, s.AnnouncementEn, s.AnnouncementKa,
+            s.HeroImagePrimaryUrl, s.HeroImageSecondaryUrl,
+            s.DealsHeroImagePrimaryUrl, s.DealsHeroImageSecondaryUrl));
     }
 }

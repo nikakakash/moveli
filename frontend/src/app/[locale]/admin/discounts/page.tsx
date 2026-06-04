@@ -8,6 +8,7 @@ import {
   updateDiscount,
   deleteDiscount,
   uploadImage,
+  bulkCreateProductDiscounts,
 } from "@/lib/api/admin";
 import { apiFetch } from "@/lib/api/client";
 import { normalizeImageUrl } from "@/lib/format";
@@ -23,6 +24,7 @@ import type {
   BrandDto,
 } from "@/lib/api/types";
 import { Plus, PencilSimple, Trash, X, UploadSimple } from "@phosphor-icons/react";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 
 interface TargetOption {
   id: string;
@@ -65,11 +67,20 @@ export default function AdminDiscountsPage() {
   const t = useTranslations("admin");
   const locale = useLocale();
   const [discounts, setDiscounts] = useState<DiscountDto[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [form, setForm] = useState<CreateDiscountRequest>(emptyForm);
+
+  // Multi-select state for bulk product-scoped discounts. When `selectedProductIds`
+  // has 2+ entries (and scope === Product, no editing), submit hits the bulk endpoint.
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [productSearch, setProductSearch] = useState("");
 
   const [products, setProducts] = useState<TargetOption[]>([]);
   const [categories, setCategories] = useState<TargetOption[]>([]);
@@ -77,14 +88,16 @@ export default function AdminDiscountsPage() {
 
   const fetchDiscounts = useCallback(async () => {
     try {
-      const data = await getDiscounts();
-      setDiscounts(data);
+      const data = await getDiscounts({ page, pageSize });
+      setDiscounts(data.items);
+      setTotalCount(data.totalCount);
+      setTotalPages(data.totalPages);
     } catch {
       toast.error("Failed to load discounts");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, pageSize]);
 
   const fetchTargets = useCallback(async () => {
     try {
@@ -133,25 +146,57 @@ export default function AdminDiscountsPage() {
     setForm(emptyForm);
     setEditingId(null);
     setShowForm(false);
+    setSelectedProductIds([]);
+    setProductSearch("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.targetId) {
-      toast.error(t("target") + " ?");
-      return;
-    }
-    const payload: CreateDiscountRequest = {
-      ...form,
-      startsAt: fromLocalInput(form.startsAt ?? ""),
-      endsAt: fromLocalInput(form.endsAt ?? ""),
-    };
+    const startsAtIso = fromLocalInput(form.startsAt ?? "");
+    const endsAtIso = fromLocalInput(form.endsAt ?? "");
+
+    // Bulk path: create-mode + Product scope + 2+ selected products. One atomic call
+    // creates N discount rows so admins don't have to submit the form per-product.
+    const useBulk =
+      !editingId && form.scope === "Product" && selectedProductIds.length > 1;
+
     try {
-      if (editingId) {
-        await updateDiscount(editingId, payload);
-        toast.success(t("discountSaved"));
+      if (useBulk) {
+        const { created } = await bulkCreateProductDiscounts({
+          productIds: selectedProductIds,
+          percentage: form.percentage,
+          isActive: form.isActive,
+          startsAt: startsAtIso,
+          endsAt: endsAtIso,
+          titleKa: form.titleKa,
+          titleEn: form.titleEn,
+          imageUrl: form.imageUrl,
+          placement: form.placement,
+          showOnHome: form.showOnHome,
+          showCountdown: form.showCountdown,
+        });
+        toast.success(t("bulkDiscountCreated", { n: created }));
       } else {
-        await createDiscount(payload);
+        // Single-target path (create OR edit). For Product scope with 1 selected, use it.
+        const targetId =
+          !editingId && form.scope === "Product" && selectedProductIds.length === 1
+            ? selectedProductIds[0]
+            : form.targetId;
+        if (!targetId) {
+          toast.error(t("target") + " ?");
+          return;
+        }
+        const payload: CreateDiscountRequest = {
+          ...form,
+          targetId,
+          startsAt: startsAtIso,
+          endsAt: endsAtIso,
+        };
+        if (editingId) {
+          await updateDiscount(editingId, payload);
+        } else {
+          await createDiscount(payload);
+        }
         toast.success(t("discountSaved"));
       }
       resetForm();
@@ -176,6 +221,9 @@ export default function AdminDiscountsPage() {
       showOnHome: d.showOnHome,
       showCountdown: d.showCountdown,
     });
+    // Editing always operates on a single target row — disable multi-select state.
+    setSelectedProductIds([]);
+    setProductSearch("");
     setEditingId(d.id);
     setShowForm(true);
   };
@@ -257,9 +305,11 @@ export default function AdminDiscountsPage() {
               </label>
               <select
                 value={form.scope}
-                onChange={(e) =>
-                  setForm({ ...form, scope: e.target.value as DiscountScope, targetId: "" })
-                }
+                onChange={(e) => {
+                  setForm({ ...form, scope: e.target.value as DiscountScope, targetId: "" });
+                  setSelectedProductIds([]);
+                  setProductSearch("");
+                }}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
               >
                 <option value="Product">{t("scopeProduct")}</option>
@@ -267,24 +317,115 @@ export default function AdminDiscountsPage() {
                 <option value="Brand">{t("scopeBrand")}</option>
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("target")}
-              </label>
-              <select
-                required
-                value={form.targetId}
-                onChange={(e) => setForm({ ...form, targetId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              >
-                <option value="">—</option>
-                {targetOptions.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+
+            {/* Multi-select picker for Product scope in create mode. Lets admins apply one
+                discount config to many products at once via /admin/discounts/bulk. */}
+            {form.scope === "Product" && !editingId ? (
+              <div className="col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    {t("products")}{" "}
+                    <span className="text-xs text-gray-400">
+                      ({selectedProductIds.length} {t("selected")})
+                    </span>
+                  </label>
+                  <div className="flex gap-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const visible = products
+                          .filter((p) =>
+                            !productSearch ||
+                            p.name.toLowerCase().includes(productSearch.toLowerCase())
+                          )
+                          .map((p) => p.id);
+                        setSelectedProductIds((prev) =>
+                          Array.from(new Set([...prev, ...visible]))
+                        );
+                      }}
+                      className="text-moveli-purple-600 hover:underline"
+                    >
+                      {t("selectAllVisible")}
+                    </button>
+                    {selectedProductIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedProductIds([])}
+                        className="text-gray-500 hover:underline"
+                      >
+                        {t("clear")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  type="search"
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder={t("searchProducts")}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2"
+                />
+                <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                  {products
+                    .filter((p) =>
+                      !productSearch ||
+                      p.name.toLowerCase().includes(productSearch.toLowerCase())
+                    )
+                    .map((p) => {
+                      const checked = selectedProductIds.includes(p.id);
+                      return (
+                        <label
+                          key={p.id}
+                          className={`flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 ${
+                            checked ? "bg-moveli-purple-50" : ""
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setSelectedProductIds((prev) =>
+                                prev.includes(p.id)
+                                  ? prev.filter((id) => id !== p.id)
+                                  : [...prev, p.id]
+                              )
+                            }
+                            className="accent-moveli-purple-600"
+                          />
+                          <span>{p.name}</span>
+                        </label>
+                      );
+                    })}
+                  {products.filter((p) =>
+                    !productSearch ||
+                    p.name.toLowerCase().includes(productSearch.toLowerCase())
+                  ).length === 0 && (
+                    <div className="px-3 py-4 text-center text-sm text-gray-400">
+                      {t("noResults")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("target")}
+                </label>
+                <select
+                  required
+                  value={form.targetId}
+                  onChange={(e) => setForm({ ...form, targetId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                >
+                  <option value="">—</option>
+                  {targetOptions.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("percentage")} (%)
@@ -512,6 +653,17 @@ export default function AdminDiscountsPage() {
             )}
           </tbody>
         </table>
+        <AdminPagination
+          page={page}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => {
+            setPageSize(n);
+            setPage(1);
+          }}
+        />
       </div>
     </div>
   );

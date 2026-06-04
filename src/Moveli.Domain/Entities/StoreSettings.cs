@@ -16,4 +16,15 @@ public class StoreSettings : BaseEntity
     public bool MaintenanceMode { get; set; }
     public string? AnnouncementEn { get; set; }
     public string? AnnouncementKa { get; set; }
+
+    // Hero image cluster on the home page — admin uploads two photos that appear
+    // in the right-hand collage. Nullable: when null the storefront falls back to
+    // the curated default (currently a Nike sneaker + Sony headphones from Unsplash).
+    public string? HeroImagePrimaryUrl { get; set; }
+    public string? HeroImageSecondaryUrl { get; set; }
+
+    // Same two-photo collage on the /deals page hero. Independent from the home hero
+    // so admins can promote a different pair (e.g., the actual products on sale).
+    public string? DealsHeroImagePrimaryUrl { get; set; }
+    public string? DealsHeroImageSecondaryUrl { get; set; }
 }

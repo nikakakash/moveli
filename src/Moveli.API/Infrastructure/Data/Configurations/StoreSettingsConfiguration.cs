@@ -18,5 +18,9 @@ public class StoreSettingsConfiguration : IEntityTypeConfiguration<StoreSettings
         builder.Property(s => s.ShippingCost).HasPrecision(18, 2);
         builder.Property(s => s.AnnouncementEn).HasMaxLength(500);
         builder.Property(s => s.AnnouncementKa).HasMaxLength(500);
+        builder.Property(s => s.HeroImagePrimaryUrl).HasMaxLength(500);
+        builder.Property(s => s.HeroImageSecondaryUrl).HasMaxLength(500);
+        builder.Property(s => s.DealsHeroImagePrimaryUrl).HasMaxLength(500);
+        builder.Property(s => s.DealsHeroImageSecondaryUrl).HasMaxLength(500);
     }
 }

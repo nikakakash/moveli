@@ -14,10 +14,16 @@ public class PromoCodeRepository : IPromoCodeRepository
         _context = context;
     }
 
-    public async Task<List<PromoCode>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await _context.PromoCodes
-            .OrderByDescending(p => p.CreatedAt)
+    public async Task<(List<PromoCode> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _context.PromoCodes.OrderByDescending(p => p.CreatedAt);
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+        return (items, total);
+    }
 
     public async Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await _context.PromoCodes.FindAsync([id], cancellationToken);

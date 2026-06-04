@@ -10,13 +10,21 @@ public record SettingsDto(
     string FreeShippingCity,
     bool MaintenanceMode,
     string? AnnouncementEn,
-    string? AnnouncementKa);
+    string? AnnouncementKa,
+    string? HeroImagePrimaryUrl,
+    string? HeroImageSecondaryUrl,
+    string? DealsHeroImagePrimaryUrl,
+    string? DealsHeroImageSecondaryUrl);
 
 public record PublicSettingsDto(
     string StoreName,
     bool MaintenanceMode,
     string? AnnouncementEn,
-    string? AnnouncementKa);
+    string? AnnouncementKa,
+    string? HeroImagePrimaryUrl,
+    string? HeroImageSecondaryUrl,
+    string? DealsHeroImagePrimaryUrl,
+    string? DealsHeroImageSecondaryUrl);
 
 public record UpdateSettingsRequest(
     string StoreName,
@@ -28,4 +36,8 @@ public record UpdateSettingsRequest(
     string FreeShippingCity,
     bool MaintenanceMode,
     string? AnnouncementEn,
-    string? AnnouncementKa);
+    string? AnnouncementKa,
+    string? HeroImagePrimaryUrl,
+    string? HeroImageSecondaryUrl,
+    string? DealsHeroImagePrimaryUrl,
+    string? DealsHeroImageSecondaryUrl);

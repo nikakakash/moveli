@@ -6,6 +6,7 @@ import { getAdminOrders, updateOrderStatus } from "@/lib/api/admin";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
 import type { OrderListDto, OrderStatus, PagedResult } from "@/lib/api/types";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 
 const STATUSES: OrderStatus[] = [
   "Pending",
@@ -31,6 +32,7 @@ export default function AdminOrdersPage() {
   const [data, setData] = useState<PagedResult<OrderListDto> | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "">("");
   const [search, setSearch] = useState("");
 
@@ -39,7 +41,7 @@ export default function AdminOrdersPage() {
     try {
       const result = await getAdminOrders({
         page,
-        pageSize: 20,
+        pageSize,
         status: filterStatus || undefined,
         search: search || undefined,
       });
@@ -49,7 +51,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, filterStatus, search]);
+  }, [page, pageSize, filterStatus, search]);
 
   useEffect(() => {
     fetchOrders();
@@ -169,21 +171,19 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Pagination */}
-      {data && data.totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
-          {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`w-9 h-9 rounded-lg text-sm font-medium ${
-                p === page
-                  ? "bg-moveli-gradient text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+      {data && (
+        <div className="mt-6 bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <AdminPagination
+            page={page}
+            pageSize={pageSize}
+            totalCount={data.totalCount}
+            totalPages={data.totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </div>
       )}
     </div>

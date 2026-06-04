@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { getSettings, updateSettings } from "@/lib/api/admin";
+import { getSettings, updateSettings, uploadImage } from "@/lib/api/admin";
 import type { UpdateSettingsRequest } from "@/lib/api/types";
+import Image from "next/image";
+import { UploadSimple, X } from "@phosphor-icons/react";
 
 const EMPTY: UpdateSettingsRequest = {
   storeName: "",
@@ -17,13 +19,26 @@ const EMPTY: UpdateSettingsRequest = {
   maintenanceMode: false,
   announcementEn: "",
   announcementKa: "",
+  heroImagePrimaryUrl: null,
+  heroImageSecondaryUrl: null,
+  dealsHeroImagePrimaryUrl: null,
+  dealsHeroImageSecondaryUrl: null,
 };
+
+// All four hero image slots live on the same StoreSettings row; this keeps the
+// admin form generic — one helper renders any of them.
+type HeroSlotKey =
+  | "heroImagePrimaryUrl"
+  | "heroImageSecondaryUrl"
+  | "dealsHeroImagePrimaryUrl"
+  | "dealsHeroImageSecondaryUrl";
 
 export default function AdminSettingsPage() {
   const t = useTranslations("admin");
   const [form, setForm] = useState<UpdateSettingsRequest>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingSlot, setUploadingSlot] = useState<HeroSlotKey | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -40,6 +55,10 @@ export default function AdminSettingsPage() {
           maintenanceMode: s.maintenanceMode,
           announcementEn: s.announcementEn ?? "",
           announcementKa: s.announcementKa ?? "",
+          heroImagePrimaryUrl: s.heroImagePrimaryUrl,
+          heroImageSecondaryUrl: s.heroImageSecondaryUrl,
+          dealsHeroImagePrimaryUrl: s.dealsHeroImagePrimaryUrl,
+          dealsHeroImageSecondaryUrl: s.dealsHeroImageSecondaryUrl,
         });
       } catch {
         toast.error("Failed to load settings");
@@ -48,6 +67,18 @@ export default function AdminSettingsPage() {
       }
     })();
   }, []);
+
+  const handleHeroUpload = async (slot: HeroSlotKey, file: File) => {
+    setUploadingSlot(slot);
+    try {
+      const { url } = await uploadImage(file);
+      setForm((prev) => ({ ...prev, [slot]: url }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingSlot(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,6 +244,88 @@ export default function AdminSettingsPage() {
             </label>
           </div>
         </div>
+
+        {/* Hero images — separate panels for the home hero and the /deals page hero. */}
+        {(
+          [
+            {
+              title: t("heroImages"),
+              help: t("heroImagesHelp"),
+              primaryKey: "heroImagePrimaryUrl" as const,
+              secondaryKey: "heroImageSecondaryUrl" as const,
+            },
+            {
+              title: t("dealsHeroImages"),
+              help: t("dealsHeroImagesHelp"),
+              primaryKey: "dealsHeroImagePrimaryUrl" as const,
+              secondaryKey: "dealsHeroImageSecondaryUrl" as const,
+            },
+          ]
+        ).map((panel) => (
+          <div key={panel.title} className="bg-white border border-gray-100 rounded-xl p-6">
+            <h2 className="font-bold text-gray-900 mb-1">{panel.title}</h2>
+            <p className="text-xs text-gray-500 mb-4">{panel.help}</p>
+            <div className="grid grid-cols-2 gap-4">
+              {(
+                [
+                  { slot: panel.primaryKey, label: t("heroImagePrimary") },
+                  { slot: panel.secondaryKey, label: t("heroImageSecondary") },
+                ]
+              ).map(({ slot, label }) => {
+                const url = form[slot] ?? null;
+                return (
+                  <div key={slot}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {label}
+                    </label>
+                    <div className="relative aspect-square rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 overflow-hidden">
+                      {url ? (
+                        <>
+                          <Image
+                            src={url}
+                            alt=""
+                            fill
+                            sizes="200px"
+                            className="object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setForm({ ...form, [slot]: null })}
+                            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white"
+                            aria-label="Remove"
+                          >
+                            <X size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-gray-400 cursor-pointer hover:bg-gray-100 transition">
+                          {uploadingSlot === slot ? (
+                            <span>...</span>
+                          ) : (
+                            <>
+                              <UploadSimple size={24} />
+                              <span>{t("uploadImage")}</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleHeroUpload(slot, file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
 
         <button
           type="submit"

@@ -115,9 +115,30 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* OpenType wins shipped by FiraGO: contextual alternates + kerning for both
+       scripts. cv11 swaps the four-sided "a" tail favored by modern retail UIs. */
+    font-feature-settings: "kern", "calt", "cv11";
   }
   html {
     @apply font-sans;
+  }
+  /* Per the typography research, e-commerce prices read significantly better with
+     monospaced digits — same column width across rows in cart, product grid, and
+     checkout totals. Tailwind exposes `tabular-nums`, but we also activate it for
+     any element using the existing `.num` / `tabular` semantics by default. */
+  .tabular-nums,
+  .num,
+  [data-tabular],
+  td.price,
+  .price {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Mtavruli (Georgian all-caps) requires the OT `case` feature to substitute
+     proper uppercase glyphs. Apply via utility on any element that uses CSS
+     text-transform: uppercase on Georgian text. */
+  .uppercase,
+  [data-mtavruli] {
+    font-feature-settings: "kern", "calt", "case";
   }
 }
 

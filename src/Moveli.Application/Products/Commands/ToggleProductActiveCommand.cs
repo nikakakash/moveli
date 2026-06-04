@@ -9,10 +9,12 @@ public record ToggleProductActiveCommand(Guid Id) : IRequest<Result>;
 public class ToggleProductActiveCommandHandler : IRequestHandler<ToggleProductActiveCommand, Result>
 {
     private readonly IProductRepository _productRepository;
+    private readonly ICacheInvalidator _invalidator;
 
-    public ToggleProductActiveCommandHandler(IProductRepository productRepository)
+    public ToggleProductActiveCommandHandler(IProductRepository productRepository, ICacheInvalidator invalidator)
     {
         _productRepository = productRepository;
+        _invalidator = invalidator;
     }
 
     public async Task<Result> Handle(ToggleProductActiveCommand request, CancellationToken cancellationToken)
@@ -23,6 +25,7 @@ public class ToggleProductActiveCommandHandler : IRequestHandler<ToggleProductAc
 
         product.IsActive = !product.IsActive;
         await _productRepository.UpdateAsync(product, cancellationToken);
+        _invalidator.Invalidate(CacheInvalidatorScopes.FeaturedProducts);
         return Result.Success();
     }
 }

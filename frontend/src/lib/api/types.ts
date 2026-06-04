@@ -524,6 +524,10 @@ export interface SettingsDto {
   maintenanceMode: boolean;
   announcementEn: string | null;
   announcementKa: string | null;
+  heroImagePrimaryUrl: string | null;
+  heroImageSecondaryUrl: string | null;
+  dealsHeroImagePrimaryUrl: string | null;
+  dealsHeroImageSecondaryUrl: string | null;
 }
 
 export interface PublicSettingsDto {
@@ -531,6 +535,10 @@ export interface PublicSettingsDto {
   maintenanceMode: boolean;
   announcementEn: string | null;
   announcementKa: string | null;
+  heroImagePrimaryUrl: string | null;
+  heroImageSecondaryUrl: string | null;
+  dealsHeroImagePrimaryUrl: string | null;
+  dealsHeroImageSecondaryUrl: string | null;
 }
 
 export interface UpdateSettingsRequest {
@@ -544,4 +552,8 @@ export interface UpdateSettingsRequest {
   maintenanceMode: boolean;
   announcementEn?: string | null;
   announcementKa?: string | null;
+  heroImagePrimaryUrl?: string | null;
+  heroImageSecondaryUrl?: string | null;
+  dealsHeroImagePrimaryUrl?: string | null;
+  dealsHeroImageSecondaryUrl?: string | null;
 }

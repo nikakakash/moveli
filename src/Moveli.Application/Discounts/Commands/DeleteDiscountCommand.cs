@@ -9,10 +9,12 @@ public record DeleteDiscountCommand(Guid Id) : IRequest<Result>;
 public class DeleteDiscountCommandHandler : IRequestHandler<DeleteDiscountCommand, Result>
 {
     private readonly IDiscountRepository _discountRepository;
+    private readonly ICacheInvalidator _invalidator;
 
-    public DeleteDiscountCommandHandler(IDiscountRepository discountRepository)
+    public DeleteDiscountCommandHandler(IDiscountRepository discountRepository, ICacheInvalidator invalidator)
     {
         _discountRepository = discountRepository;
+        _invalidator = invalidator;
     }
 
     public async Task<Result> Handle(DeleteDiscountCommand request, CancellationToken cancellationToken)
@@ -22,6 +24,8 @@ public class DeleteDiscountCommandHandler : IRequestHandler<DeleteDiscountComman
             return Result.Failure("Discount not found.");
 
         await _discountRepository.DeleteAsync(discount, cancellationToken);
+        _invalidator.Invalidate(CacheInvalidatorScopes.FeaturedProducts);
+        _invalidator.Invalidate(CacheInvalidatorScopes.Discounts);
         return Result.Success();
     }
 }

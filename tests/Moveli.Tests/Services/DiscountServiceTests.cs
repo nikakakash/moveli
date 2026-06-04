@@ -1,5 +1,7 @@
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Memory;
 using Moq;
+using Moveli.Application.Common;
 using Moveli.Application.Discounts;
 using Moveli.Domain.Entities;
 using Moveli.Domain.Enums;
@@ -11,11 +13,17 @@ namespace Moveli.Tests.Services;
 public class DiscountServiceTests
 {
     private readonly Mock<IDiscountRepository> _repo = new();
+    private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly Mock<ICacheInvalidator> _invalidator = new();
     private readonly DiscountService _sut;
 
     public DiscountServiceTests()
     {
-        _sut = new DiscountService(_repo.Object);
+        // Use a real MemoryCache + mocked invalidator so caching is exercised but tests
+        // observe the same behavior as before (each test instance starts with a fresh cache).
+        _invalidator.Setup(i => i.GetChangeToken(It.IsAny<string>()))
+            .Returns(new Microsoft.Extensions.Primitives.CancellationChangeToken(new CancellationToken(false)));
+        _sut = new DiscountService(_repo.Object, _cache, _invalidator.Object);
     }
 
     private void SetupLive(params Discount[] discounts) =>

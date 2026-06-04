@@ -4,7 +4,7 @@ namespace Moveli.Domain.Interfaces;
 
 public interface IPromoCodeRepository
 {
-    Task<List<PromoCode>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<(List<PromoCode> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PromoCode?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
     Task AddAsync(PromoCode promoCode, CancellationToken cancellationToken = default);

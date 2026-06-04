@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/admin";
 import type { AdminReviewDto, PagedResult } from "@/lib/api/types";
 import { Check, X, Trash, Star } from "@phosphor-icons/react";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 
 type Filter = "all" | "pending" | "approved";
 
@@ -20,20 +21,21 @@ export default function AdminReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("pending");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
     try {
       const isApproved =
         filter === "all" ? undefined : filter === "approved";
-      const result = await getAdminReviews({ page, pageSize: 20, isApproved });
+      const result = await getAdminReviews({ page, pageSize, isApproved });
       setData(result);
     } catch {
       toast.error("Failed to load reviews");
     } finally {
       setLoading(false);
     }
-  }, [filter, page]);
+  }, [filter, page, pageSize]);
 
   useEffect(() => {
     fetchReviews();
@@ -189,25 +191,19 @@ export default function AdminReviewsPage() {
         </table>
       </div>
 
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm disabled:opacity-40"
-          >
-            {t("prev")}
-          </button>
-          <span className="text-sm text-gray-500">
-            {page} / {data.totalPages}
-          </span>
-          <button
-            disabled={page >= data.totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm disabled:opacity-40"
-          >
-            {t("next")}
-          </button>
+      {data && (
+        <div className="mt-4 bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <AdminPagination
+            page={page}
+            pageSize={pageSize}
+            totalCount={data.totalCount}
+            totalPages={data.totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </div>
       )}
     </div>

@@ -6,9 +6,9 @@ using Moveli.Domain.Interfaces;
 
 namespace Moveli.Application.Discounts.Queries;
 
-public record GetDiscountsQuery : IRequest<Result<List<DiscountDto>>>;
+public record GetDiscountsQuery(int Page = 1, int PageSize = 20) : IRequest<Result<PagedResult<DiscountDto>>>;
 
-public class GetDiscountsQueryHandler : IRequestHandler<GetDiscountsQuery, Result<List<DiscountDto>>>
+public class GetDiscountsQueryHandler : IRequestHandler<GetDiscountsQuery, Result<PagedResult<DiscountDto>>>
 {
     private readonly IDiscountRepository _discountRepository;
     private readonly IProductRepository _productRepository;
@@ -27,9 +27,12 @@ public class GetDiscountsQueryHandler : IRequestHandler<GetDiscountsQuery, Resul
         _brandRepository = brandRepository;
     }
 
-    public async Task<Result<List<DiscountDto>>> Handle(GetDiscountsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResult<DiscountDto>>> Handle(GetDiscountsQuery request, CancellationToken cancellationToken)
     {
-        var discounts = await _discountRepository.GetAllAsync(cancellationToken);
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
+        var (discounts, total) = await _discountRepository.GetPagedAsync(page, pageSize, cancellationToken);
 
         var dtos = new List<DiscountDto>(discounts.Count);
         foreach (var d in discounts)
@@ -59,6 +62,7 @@ public class GetDiscountsQueryHandler : IRequestHandler<GetDiscountsQuery, Resul
                 d.ShowCountdown));
         }
 
-        return Result<List<DiscountDto>>.Success(dtos);
+        return Result<PagedResult<DiscountDto>>.Success(
+            new PagedResult<DiscountDto>(dtos, total, page, pageSize));
     }
 }

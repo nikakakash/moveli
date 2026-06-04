@@ -32,7 +32,9 @@ public class AdminSettingsController : ControllerBase
         var command = new UpdateSettingsCommand(
             request.StoreName, request.SupportEmail, request.SupportPhone, request.CurrencyCode,
             request.FreeShippingThreshold, request.ShippingCost, request.FreeShippingCity,
-            request.MaintenanceMode, request.AnnouncementEn, request.AnnouncementKa);
+            request.MaintenanceMode, request.AnnouncementEn, request.AnnouncementKa,
+            request.HeroImagePrimaryUrl, request.HeroImageSecondaryUrl,
+            request.DealsHeroImagePrimaryUrl, request.DealsHeroImageSecondaryUrl);
         var result = await _mediator.Send(command);
         return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }

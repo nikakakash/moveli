@@ -45,10 +45,12 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
 public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, Result<ProductDto>>
 {
     private readonly IProductRepository _productRepository;
+    private readonly ICacheInvalidator _invalidator;
 
-    public CreateProductCommandHandler(IProductRepository productRepository)
+    public CreateProductCommandHandler(IProductRepository productRepository, ICacheInvalidator invalidator)
     {
         _productRepository = productRepository;
+        _invalidator = invalidator;
     }
 
     public async Task<Result<ProductDto>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
@@ -86,6 +88,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         }
 
         product = await _productRepository.AddAsync(product, cancellationToken);
+        _invalidator.Invalidate(CacheInvalidatorScopes.FeaturedProducts);
 
         var dto = new ProductDto(
             product.Id,

@@ -20,9 +20,9 @@ public class AdminDiscountsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _mediator.Send(new GetDiscountsQuery());
+        var result = await _mediator.Send(new GetDiscountsQuery(page, pageSize));
         return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
@@ -37,6 +37,21 @@ public class AdminDiscountsController : ControllerBase
         var result = await _mediator.Send(command);
         return result.IsSuccess
             ? Ok(new { id = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+
+    [HttpPost("bulk")]
+    public async Task<IActionResult> BulkCreateProductDiscounts(
+        [FromBody] BulkCreateProductDiscountsRequest request)
+    {
+        var command = new BulkCreateProductDiscountsCommand(
+            request.ProductIds, request.Percentage, request.IsActive,
+            request.StartsAt, request.EndsAt,
+            request.TitleKa, request.TitleEn, request.ImageUrl,
+            request.Placement, request.ShowOnHome, request.ShowCountdown);
+        var result = await _mediator.Send(command);
+        return result.IsSuccess
+            ? Ok(new { created = result.Value })
             : BadRequest(new { error = result.Error });
     }
 
