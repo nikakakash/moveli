@@ -38,9 +38,6 @@ export function ProductDetail({ product, reviews }: Props) {
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<"description" | "reviews">(
-    "description"
-  );
   const [isAdding, setIsAdding] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
@@ -312,42 +309,32 @@ export function ProductDetail({ product, reviews }: Props) {
               {t("freeReturns")}
             </div>
           </div>
+
+          {/* Description — moved out of the tabs section so it fills the empty space
+              under the buy-box rather than appearing below the photo on a separate row. */}
+          {description && (
+            <div className="border-t border-gray-100 pt-5">
+              <h2 className="text-sm font-semibold text-gray-900 mb-2">
+                {t("description")}
+              </h2>
+              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                {description}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="mt-12 border-t border-gray-200">
-        <div className="flex gap-8 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab("description")}
-            className={`py-4 text-sm font-medium border-b-2 transition ${
-              activeTab === "description"
-                ? "border-moveli-purple-500 text-moveli-purple-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {t("description")}
-          </button>
-          <button
-            onClick={() => setActiveTab("reviews")}
-            className={`py-4 text-sm font-medium border-b-2 transition ${
-              activeTab === "reviews"
-                ? "border-moveli-purple-500 text-moveli-purple-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {t("reviews")} ({product.reviewCount})
-          </button>
-        </div>
+      {/* Reviews — full-width section. Description moved into the right column above,
+          so the tab strip collapses to a single titled section. */}
+      <div className="mt-12 border-t border-gray-200 pt-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-6">
+          {t("reviews")} ({product.reviewCount})
+        </h2>
 
-        <div className="py-6">
-          {activeTab === "description" ? (
-            <div className="prose prose-sm max-w-none text-gray-700">
-              <p>{description}</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Review form */}
+        <div>
+          <div className="space-y-6">
+            {/* Review form */}
               {isAuthenticated ? (
                 <form
                   onSubmit={handleSubmitReview}
@@ -452,7 +439,6 @@ export function ProductDetail({ product, reviews }: Props) {
                 ))
               )}
             </div>
-          )}
         </div>
       </div>
     </div>

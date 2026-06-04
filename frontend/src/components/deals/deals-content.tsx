@@ -110,47 +110,46 @@ export function DealsContent({
           Black-Friday purple from the design. Right column hides on mobile so the
           copy + countdown get full width. */}
       <section
-        className="relative overflow-hidden rounded-2xl p-8 md:p-12 text-white grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 items-center min-h-[360px]"
+        className="relative overflow-hidden rounded-2xl p-6 sm:p-8 md:p-10 lg:p-12 text-white grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-6 items-center min-h-[260px] sm:min-h-[300px] lg:min-h-[360px]"
         style={{
           background:
             "linear-gradient(120deg, #2A226B 0%, #44389A 45%, #4099C2 100%)",
         }}
       >
-        {/* Glow / radial accents */}
-        <div className="absolute -top-20 -right-16 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-moveli-cyan-400/15 blur-3xl pointer-events-none" />
+        {/* Glow / radial accents — scaled down on mobile so they don't dominate. */}
+        <div className="absolute -top-20 -right-16 w-48 sm:w-72 h-48 sm:h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-10 w-48 sm:w-72 h-48 sm:h-72 rounded-full bg-moveli-cyan-400/15 blur-3xl pointer-events-none" />
 
         {/* Copy + countdown */}
         <div className="relative z-10 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-sm font-medium">
+          <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
             <Lightning size={14} weight="fill" /> {t("badge")}
           </span>
-          <h1 className="text-3xl md:text-5xl font-extrabold mt-4 leading-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mt-3 sm:mt-4 leading-tight">
             {hero ? dealTitle(hero) : t("heroTitle")}
           </h1>
-          <p className="text-white/80 mt-3">{t("heroSubtitle")}</p>
+          <p className="text-sm sm:text-base text-white/80 mt-2 sm:mt-3">{t("heroSubtitle")}</p>
           {hero?.showCountdown && hero.endsAt && (
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <CountdownTimer endsAt={hero.endsAt} variant="hero" />
             </div>
           )}
         </div>
 
-        {/* Image cluster — hidden on small screens. Same overlapping-rotated-cards
-            language as the home hero, but flipped: the iPhone (secondary) is the
-            *bigger* card sitting behind, the sneaker (primary) sits in front. */}
-        <div className="relative hidden lg:block h-[340px]">
+        {/* Image cluster — visible from md and up with size scaled per breakpoint.
+            Hidden on mobile because the cluster needs horizontal room beside the headline. */}
+        <div className="relative hidden md:block h-[260px] lg:h-[340px]">
           {/* Soft glow behind the photos. */}
           <div
-            className="absolute right-0 top-0 w-[320px] h-[320px] rounded-full pointer-events-none blur-3xl"
+            className="absolute right-0 top-0 w-[220px] lg:w-[320px] h-[220px] lg:h-[320px] rounded-full pointer-events-none blur-3xl"
             style={{
               background:
                 "radial-gradient(circle, rgba(255,255,255,0.18), rgba(64,153,194,0.05) 70%)",
             }}
           />
 
-          {/* Secondary photo (large, behind) — iPhone in the design. Slight CCW tilt. */}
-          <div className="absolute right-2 top-2 w-[280px] h-[280px] rounded-2xl overflow-hidden shadow-2xl -rotate-6">
+          {/* Secondary photo (large, behind). Scales 200→280. */}
+          <div className="absolute right-2 top-2 w-[200px] lg:w-[280px] h-[200px] lg:h-[280px] rounded-2xl overflow-hidden shadow-2xl -rotate-6">
             <Image
               src={heroSecondaryImageUrl || FALLBACK_SECONDARY}
               alt=""
@@ -162,9 +161,8 @@ export function DealsContent({
             />
           </div>
 
-          {/* Primary photo (small, in front) — Nike shoe in the design. Slight CW tilt,
-              white frame so it pops against both the iPhone and the dark gradient. */}
-          <div className="absolute right-[210px] top-[110px] w-[170px] h-[170px] rounded-xl overflow-hidden shadow-2xl rotate-[6deg] border-4 border-white">
+          {/* Primary photo (small, in front). Scales 130→170; anchored to the secondary. */}
+          <div className="absolute right-[150px] lg:right-[210px] top-[90px] lg:top-[110px] w-[130px] lg:w-[170px] h-[130px] lg:h-[170px] rounded-xl overflow-hidden shadow-2xl rotate-[6deg] border-4 border-white">
             <Image
               src={heroPrimaryImageUrl || FALLBACK_PRIMARY}
               alt=""

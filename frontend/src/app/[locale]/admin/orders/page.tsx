@@ -100,9 +100,9 @@ export default function AdminOrdersPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      {/* Table — overflow-x-auto so wide columns scroll horizontally on mobile. */}
+      <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50">
               <th className="text-left px-4 py-3 font-medium text-gray-500">{t("orderNumber")}</th>
