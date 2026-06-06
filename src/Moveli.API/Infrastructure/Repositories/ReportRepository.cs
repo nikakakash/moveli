@@ -31,14 +31,17 @@ public class ReportRepository : IReportRepository
                 .Where(i => i.Order.CreatedAt >= from && i.Order.CreatedAt <= to && i.Order.Status != OrderStatus.Cancelled)
                 .SumAsync(i => (int?)i.Quantity, cancellationToken) ?? 0);
 
-        // Revenue over time (by day)
-        var revenueRaw = await paidOrders
-            .GroupBy(o => o.CreatedAt.Date)
-            .Select(g => new { Date = g.Key, Revenue = g.Sum(o => o.Total), Orders = g.Count() })
-            .OrderBy(x => x.Date)
+        // Revenue over time (by day).
+        // Fetch the lightweight (date, total) pairs and group in memory — at most 90
+        // rows, so the transfer cost is negligible, and it avoids GroupBy translation
+        // issues across Npgsql/SQLite.
+        var orderPairs = await paidOrders
+            .Select(o => new { o.CreatedAt, o.Total })
             .ToListAsync(cancellationToken);
-        var revenueOverTime = revenueRaw
-            .Select(x => new RevenuePoint(x.Date, x.Revenue, x.Orders))
+        var revenueOverTime = orderPairs
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new RevenuePoint(g.Key, g.Sum(o => o.Total), g.Count()))
+            .OrderBy(r => r.Date)
             .ToList();
 
         // Sales by category — group by the scalar CategoryId only (grouping by an

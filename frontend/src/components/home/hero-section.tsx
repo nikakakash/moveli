@@ -67,9 +67,9 @@ export function HeroSection({ primaryImageUrl, secondaryImageUrl }: Props) {
 
           <div className="flex gap-6 sm:gap-8 mt-6 sm:mt-8">
             {[
-              { value: "50K+", label: t("products") },
-              { value: "1,200+", label: t("sellers") },
-              { value: "4.8", label: t("rating") },
+              { value: "₾0", label: t("freeDeliveryTag") },
+              { value: "24h", label: t("fastDeliveryTag") },
+              { value: "14", label: t("returnDaysTag") },
             ].map((stat) => (
               <div key={stat.label} className="flex flex-col gap-0.5">
                 <span className="text-lg sm:text-xl font-extrabold text-moveli-purple-700 tabular-nums">

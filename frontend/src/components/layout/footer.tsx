@@ -1,5 +1,9 @@
+"use client";
+
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { MoveliLogo } from "@/components/ui/moveli-logo";
+import { Truck, ArrowCounterClockwise } from "@phosphor-icons/react";
 
 export function Footer() {
   const t = useTranslations("footer");
@@ -7,7 +11,7 @@ export function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
             <MoveliLogo size={24} />
@@ -21,43 +25,41 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <span className="hover:text-white transition cursor-pointer">
+                <Link href="/about" className="hover:text-white transition">
                   {t("aboutUs")}
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-white transition cursor-pointer">
-                  {t("careers")}
-                </span>
-              </li>
-              <li>
-                <span className="hover:text-white transition cursor-pointer">
+                <Link href="/blog" className="hover:text-white transition">
                   {t("blog")}
-                </span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-white transition">
+                  {t("contactUs")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="hover:text-white transition">
+                  {t("faq")}
+                </Link>
               </li>
             </ul>
           </div>
 
-          {/* Help */}
+          {/* Shipping & delivery */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">
-              {t("helpCenter")}
+            <h4 className="text-white font-semibold text-sm mb-3 flex items-center gap-1.5">
+              <Truck size={16} className="text-moveli-cyan-400" />
+              {t("shippingInfo")}
             </h4>
             <ul className="space-y-2 text-sm">
-              <li>
-                <span className="hover:text-white transition cursor-pointer">
-                  {t("contactUs")}
-                </span>
-              </li>
-              <li>
-                <span className="hover:text-white transition cursor-pointer">
-                  {t("faq")}
-                </span>
-              </li>
-              <li>
-                <span className="hover:text-white transition cursor-pointer">
-                  {t("shipping")}
-                </span>
+              <li className="text-gray-400">{t("shippingTbilisi")}</li>
+              <li className="text-gray-400">{t("shippingRegional")}</li>
+              <li className="text-gray-400">{t("deliveryTime")}</li>
+              <li className="flex items-center gap-1.5 text-gray-400">
+                <ArrowCounterClockwise size={14} className="text-moveli-cyan-400 flex-shrink-0" />
+                {t("refundDesc")}
               </li>
             </ul>
           </div>
@@ -69,19 +71,24 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <span className="hover:text-white transition cursor-pointer">
+                <Link href="/privacy" className="hover:text-white transition">
                   {t("privacy")}
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-white transition cursor-pointer">
+                <Link href="/terms" className="hover:text-white transition">
                   {t("terms")}
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-white transition cursor-pointer">
+                <Link href="/refund-policy" className="hover:text-white transition">
                   {t("refund")}
-                </span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/shipping-policy" className="hover:text-white transition">
+                  {t("shippingPolicy")}
+                </Link>
               </li>
             </ul>
           </div>

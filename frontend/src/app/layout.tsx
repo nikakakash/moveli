@@ -40,7 +40,7 @@ const firaGo = localFont({
 export const metadata: Metadata = {
   title: "MOVELI — საქართველოს ონლაინ მარკეტპლეისი",
   description:
-    "საუკეთესო პროდუქტები საუკეთესო ფასებად. უფასო მიწოდება ₾80-დან.",
+    "საუკეთესო პროდუქტები საუკეთესო ფასებად. უფასო მიწოდება ₾100-დან.",
 };
 
 export default function RootLayout({

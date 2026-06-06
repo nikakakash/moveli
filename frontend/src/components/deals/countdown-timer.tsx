@@ -24,7 +24,10 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 export function CountdownTimer({ endsAt, variant = "hero" }: Props) {
   const t = useTranslations("deals");
-  const [left, setLeft] = useState(() => diff(endsAt));
+  // Start as null so the server and the first client render both emit nothing,
+  // matching exactly. The effect populates the real countdown post-hydration,
+  // which is why `Date.now()` no longer triggers a mismatch.
+  const [left, setLeft] = useState<ReturnType<typeof diff>>(null);
 
   useEffect(() => {
     setLeft(diff(endsAt));
