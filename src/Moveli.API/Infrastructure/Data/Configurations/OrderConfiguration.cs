@@ -48,5 +48,8 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .WithMany(o => o.Items)
             .HasForeignKey(oi => oi.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Supports the dashboard top-products aggregation (GROUP BY ProductId).
+        builder.HasIndex(oi => oi.ProductId);
     }
 }

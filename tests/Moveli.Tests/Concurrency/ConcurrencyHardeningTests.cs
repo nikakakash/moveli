@@ -132,18 +132,24 @@ public class ConcurrencyHardeningTests : IDisposable
             .ReturnsAsync(refreshedCart); // reload inside the catch
         cartRepo.Setup(r => r.AddItemAsync(It.IsAny<CartItem>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DuplicateEntityException("Item already in cart."));
-        CartItem? merged = null;
-        cartRepo.Setup(r => r.UpdateItemAsync(It.IsAny<CartItem>(), It.IsAny<CancellationToken>()))
-            .Callback<CartItem, CancellationToken>((i, _) => merged = i)
-            .Returns(Task.CompletedTask);
+        int? incrementDelta = null;
+        int? incrementMaxStock = null;
+        cartRepo.Setup(r => r.TryIncrementItemQuantityAsync(
+                It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+            .Callback<Guid, int, int, decimal, CancellationToken>((_, delta, maxStock, _, _) =>
+            {
+                incrementDelta = delta;
+                incrementMaxStock = maxStock;
+            })
+            .ReturnsAsync(true);
 
         var handler = new AddCartItemCommandHandler(cartRepo.Object, productRepo.Object, discounts.Object);
 
         var result = await handler.Handle(new AddCartItemCommand(userId, null, productId, 3), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        merged.Should().NotBeNull();
-        merged!.Quantity.Should().Be(5); // existing 2 + requested 3
+        incrementDelta.Should().Be(3);          // requested quantity, atomically added
+        incrementMaxStock.Should().Be(100);     // guarded against product stock
     }
 
     public void Dispose()

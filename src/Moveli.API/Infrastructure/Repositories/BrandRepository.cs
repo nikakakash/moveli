@@ -31,6 +31,15 @@ public class BrandRepository : IBrandRepository
         return await _context.Brands.FindAsync([id], cancellationToken);
     }
 
+    public async Task<List<Brand>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0) return [];
+        return await _context.Brands
+            .AsNoTracking()
+            .Where(b => ids.Contains(b.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Brand> AddAsync(Brand brand, CancellationToken cancellationToken = default)
     {
         _context.Brands.Add(brand);

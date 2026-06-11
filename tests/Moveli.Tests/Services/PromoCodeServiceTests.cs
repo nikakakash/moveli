@@ -79,6 +79,21 @@ public class PromoCodeServiceTests
     }
 
     [Fact]
+    public async Task ValidateAsync_Fails_WhenGlobalRedemptionCapReached()
+    {
+        var promo = LivePercentage();
+        promo.MaxRedemptions = 100;
+        _repo.Setup(r => r.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(promo);
+        _repo.Setup(r => r.HasUserRedeemedAsync(promo.Id, UserId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.GetRedemptionCountAsync(promo.Id, It.IsAny<CancellationToken>())).ReturnsAsync(100);
+
+        var result = await _sut.ValidateAsync("SAVE15", 100, UserId);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("This promo code is no longer available.");
+    }
+
+    [Fact]
     public async Task ValidateAsync_Succeeds_AndComputesPercentageDiscount()
     {
         var promo = LivePercentage(15);

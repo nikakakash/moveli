@@ -1,6 +1,7 @@
 using MediatR;
 using Moveli.Application.Common;
 using Moveli.Application.Discounts;
+using Moveli.Application.Products;
 using Moveli.Application.Products.DTOs;
 using Moveli.Domain.Interfaces;
 
@@ -48,19 +49,17 @@ public class GetDealProductsQueryHandler
             .OrderByDescending(x => x.Percentage)
             .ToList();
 
+        var pageNumber = Math.Max(1, request.Page);
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
         var total = discounted.Count;
         var page = discounted
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Select(x => new ProductListDto(
-                x.Product.Id, x.Product.Name.Ka, x.Product.Name.En, x.Product.Slug,
-                x.Price, x.CompareAtPrice,
-                x.Product.Images.FirstOrDefault(i => i.IsMain)?.Url ?? x.Product.Images.FirstOrDefault()?.Url,
-                x.Product.Category.Name.Ka, x.Product.Category.Name.En, x.Product.Brand.Name,
-                x.Product.IsActive, x.Product.IsFeatured, x.Product.Rating, x.Product.ReviewCount, x.Product.StockQuantity))
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => x.Product.ToListDto(snapshot))
             .ToList();
 
         return Result<PagedResult<ProductListDto>>.Success(
-            new PagedResult<ProductListDto>(page, total, request.Page, request.PageSize));
+            new PagedResult<ProductListDto>(page, total, pageNumber, pageSize));
     }
 }

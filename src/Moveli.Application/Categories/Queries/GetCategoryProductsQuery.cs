@@ -1,5 +1,7 @@
 using MediatR;
 using Moveli.Application.Common;
+using Moveli.Application.Discounts;
+using Moveli.Application.Products;
 using Moveli.Application.Products.DTOs;
 using Moveli.Domain.Interfaces;
 
@@ -15,43 +17,38 @@ public class GetCategoryProductsQueryHandler : IRequestHandler<GetCategoryProduc
 {
     private readonly IProductRepository _productRepository;
     private readonly ICategoryRepository _categoryRepository;
+    private readonly IDiscountService _discountService;
 
-    public GetCategoryProductsQueryHandler(IProductRepository productRepository, ICategoryRepository categoryRepository)
+    public GetCategoryProductsQueryHandler(
+        IProductRepository productRepository,
+        ICategoryRepository categoryRepository,
+        IDiscountService discountService)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
+        _discountService = discountService;
     }
 
     public async Task<Result<PagedResult<ProductListDto>>> Handle(GetCategoryProductsQuery request, CancellationToken cancellationToken)
     {
-        var category = await _categoryRepository.GetByIdAsync(request.CategoryId, cancellationToken);
-        if (category == null)
+        if (!await _categoryRepository.ExistsAsync(request.CategoryId, cancellationToken))
             return Result<PagedResult<ProductListDto>>.Failure("Category not found.");
 
+        var page = Math.Max(1, request.Page);
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
         var (items, totalCount) = await _productRepository.GetProductsAsync(
-            request.Page, request.PageSize,
+            page, pageSize,
             categoryId: request.CategoryId,
             sortBy: request.SortBy,
             cancellationToken: cancellationToken);
 
-        var dtos = items.Select(p => new ProductListDto(
-            p.Id,
-            p.Name.Ka,
-            p.Name.En,
-            p.Slug,
-            p.Price,
-            p.CompareAtPrice,
-            p.Images.FirstOrDefault(i => i.IsMain)?.Url ?? p.Images.FirstOrDefault()?.Url,
-            p.Category.Name.Ka,
-            p.Category.Name.En,
-            p.Brand.Name,
-            p.IsActive,
-            p.IsFeatured,
-            p.Rating,
-            p.ReviewCount,
-            p.StockQuantity)).ToList();
+        // Apply the live discount snapshot so category pages price products identically to
+        // the main catalog and deals pages.
+        var discounts = await _discountService.CreateSnapshotAsync(cancellationToken);
+        var dtos = items.Select(p => p.ToListDto(discounts)).ToList();
 
         return Result<PagedResult<ProductListDto>>.Success(
-            new PagedResult<ProductListDto>(dtos, totalCount, request.Page, request.PageSize));
+            new PagedResult<ProductListDto>(dtos, totalCount, page, pageSize));
     }
 }

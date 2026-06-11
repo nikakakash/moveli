@@ -7,6 +7,8 @@ public interface ICategoryRepository
     Task<List<Category>> GetTreeAsync(CancellationToken cancellationToken = default);
     Task<Category?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
     Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<Category>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
+    Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<int> GetProductCountAsync(Guid categoryId, CancellationToken cancellationToken = default);
     Task<Category> AddAsync(Category category, CancellationToken cancellationToken = default);
     Task UpdateAsync(Category category, CancellationToken cancellationToken = default);

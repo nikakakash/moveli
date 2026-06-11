@@ -18,6 +18,7 @@ public class CartRepository : ICartRepository
     public async Task<Cart?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Carts
+            .AsNoTracking()
             .Include(c => c.Items)
                 .ThenInclude(i => i.Product)
                     .ThenInclude(p => p.Images)
@@ -27,6 +28,7 @@ public class CartRepository : ICartRepository
     public async Task<Cart?> GetBySessionIdAsync(string sessionId, CancellationToken cancellationToken = default)
     {
         return await _context.Carts
+            .AsNoTracking()
             .Include(c => c.Items)
                 .ThenInclude(i => i.Product)
                     .ThenInclude(p => p.Images)
@@ -65,6 +67,16 @@ public class CartRepository : ICartRepository
     {
         _context.Set<CartItem>().Update(item);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> TryIncrementItemQuantityAsync(Guid itemId, int delta, int maxStock, decimal unitPrice, CancellationToken cancellationToken = default)
+    {
+        var affected = await _context.Set<CartItem>()
+            .Where(i => i.Id == itemId && i.Quantity + delta <= maxStock)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(i => i.Quantity, i => i.Quantity + delta)
+                .SetProperty(i => i.UnitPrice, unitPrice), cancellationToken);
+        return affected > 0;
     }
 
     public async Task RemoveItemAsync(CartItem item, CancellationToken cancellationToken = default)

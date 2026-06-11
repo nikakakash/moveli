@@ -7,6 +7,7 @@ public interface IOrderRepository
 {
     Task<Order> CreateAsync(Order order, CancellationToken cancellationToken = default);
     Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Dictionary<Guid, int>> GetItemCountsAsync(IReadOnlyCollection<Guid> orderIds, CancellationToken cancellationToken = default);
     Task<(List<Order> Items, int TotalCount)> GetByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<(List<Order> Items, int TotalCount)> GetAllAsync(
         int page, int pageSize,

@@ -10,7 +10,9 @@ public class StoreSettings : BaseEntity
     // Shipping
     public decimal FreeShippingThreshold { get; set; } = 100m;
     public decimal ShippingCost { get; set; } = 5m;
-    public string FreeShippingCity { get; set; } = "Tbilisi";
+    // Must match the city string the storefront sends at checkout (the checkout city
+    // dropdown uses Georgian names), otherwise the free-shipping rule never matches.
+    public string FreeShippingCity { get; set; } = "თბილისი";
 
     // Storefront toggles
     public bool MaintenanceMode { get; set; }

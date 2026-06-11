@@ -49,8 +49,8 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-6 py-1.5 flex items-center justify-between">
           <span className="text-moveli-purple-700 font-medium">
             {locale === "ka"
-              ? "მიწოდება 36 საათში 🚚"
-              : "Delivery within 36 hours 🚚"}
+              ? "მიწოდება 24 საათში 🚚"
+              : "Delivery within 24 hours 🚚"}
           </span>
           <div className="flex items-center gap-4">
             <Link
@@ -76,6 +76,8 @@ export function Header() {
           {/* Mobile menu toggle */}
           <button
             className="lg:hidden"
+            aria-label={mobileOpen ? (locale === "ka" ? "მენიუს დახურვა" : "Close menu") : (locale === "ka" ? "მენიუს გახსნა" : "Open menu")}
+            aria-expanded={mobileOpen}
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X size={24} /> : <List size={24} />}
@@ -109,6 +111,7 @@ export function Header() {
             {/* Language toggle (mobile) */}
             <button
               onClick={switchLocale}
+              aria-label={locale === "ka" ? "Switch to English" : "ქართულზე გადართვა"}
               className="lg:hidden text-gray-600"
             >
               <Globe size={20} />

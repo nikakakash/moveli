@@ -20,10 +20,29 @@ export function register(data: RegisterRequest) {
   });
 }
 
-export function refreshTokens(refreshToken: string) {
+export function refreshTokens() {
+  // The refresh token is carried by the HttpOnly cookie (credentials: "include"), not the body.
   return apiFetch<AuthResponse>("/auth/refresh", {
     method: "POST",
-    body: { refreshToken },
+    body: {},
+  });
+}
+
+export function logout() {
+  return apiFetch<void>("/auth/logout", { method: "POST" });
+}
+
+export function forgotPassword(email: string) {
+  return apiFetch<{ message: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export function resetPassword(data: { email: string; token: string; newPassword: string }) {
+  return apiFetch<{ message: string }>("/auth/reset-password", {
+    method: "POST",
+    body: data,
   });
 }
 

@@ -37,9 +37,6 @@ function RefundEn() {
         <ul className="list-disc pl-5 space-y-1">
           <li>Sealed hygiene or personal care products that have been opened.</li>
           <li>Personalized or custom-made products.</li>
-          <li>Perishable goods (food, flowers).</li>
-          <li>Sealed audio, video, or software products that have been unsealed.</li>
-          <li>Newspapers, magazines, and periodicals.</li>
         </ul>
       </Section>
 
@@ -105,9 +102,6 @@ function RefundKa() {
         <ul className="list-disc pl-5 space-y-1">
           <li>დალუქული ჰიგიენური ან პირადი მოვლის პროდუქტები, რომლებიც გახსნილია.</li>
           <li>პერსონალიზებული ან ინდივიდუალურად დამზადებული პროდუქტები.</li>
-          <li>მალფუჭებადი საქონელი (საკვები, ყვავილები).</li>
-          <li>დალუქული აუდიო, ვიდეო ან პროგრამული პროდუქტები, რომლებიც გახსნილია.</li>
-          <li>გაზეთები, ჟურნალები და პერიოდული გამოცემები.</li>
         </ul>
       </Section>
 

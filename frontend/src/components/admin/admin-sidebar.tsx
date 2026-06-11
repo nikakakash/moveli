@@ -14,6 +14,7 @@ import {
   Star,
   ChartLineUp,
   GearSix,
+  House,
 } from "@phosphor-icons/react";
 
 const navItems = [
@@ -36,6 +37,14 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-60 bg-white border-r border-gray-100 min-h-[calc(100vh-4rem)] p-4">
+      {/* Client-side nav back to the storefront — keeps the session (no full reload). */}
+      <Link
+        href="/"
+        className="flex items-center gap-2 px-3 py-2 mb-4 rounded-lg text-sm font-medium text-moveli-purple-700 hover:bg-moveli-purple-50 transition"
+      >
+        <House size={18} weight="fill" />
+        {t("backToStore")}
+      </Link>
       <h2 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-4 px-3">
         {t("adminPanel")}
       </h2>

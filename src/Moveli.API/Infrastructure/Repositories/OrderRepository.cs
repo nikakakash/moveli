@@ -29,11 +29,21 @@ public class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
+    public async Task<Dictionary<Guid, int>> GetItemCountsAsync(IReadOnlyCollection<Guid> orderIds, CancellationToken cancellationToken = default)
+    {
+        if (orderIds.Count == 0) return [];
+        return await _context.Set<OrderItem>()
+            .Where(i => orderIds.Contains(i.OrderId))
+            .GroupBy(i => i.OrderId)
+            .Select(g => new { OrderId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.OrderId, x => x.Count, cancellationToken);
+    }
+
     public async Task<(List<Order> Items, int TotalCount)> GetByUserIdAsync(
         Guid userId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Orders
-            .Include(o => o.Items)
+            .AsNoTracking()
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAt);
 
@@ -51,7 +61,7 @@ public class OrderRepository : IOrderRepository
         CancellationToken cancellationToken = default)
     {
         var query = _context.Orders
-            .Include(o => o.Items)
+            .AsNoTracking()
             .AsQueryable();
 
         if (status.HasValue)

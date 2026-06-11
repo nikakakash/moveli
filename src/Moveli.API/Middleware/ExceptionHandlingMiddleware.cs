@@ -26,11 +26,12 @@ public class ExceptionHandlingMiddleware
             context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
             context.Response.ContentType = "application/json";
 
-            var errors = ex.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+            // Single consistent error shape across the API: { error: "message" }.
+            var message = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage).Distinct());
+            if (string.IsNullOrWhiteSpace(message))
+                message = "Invalid request. Please check your input and try again.";
 
-            await context.Response.WriteAsJsonAsync(new { errors });
+            await context.Response.WriteAsJsonAsync(new { error = message });
         }
         catch (JsonException ex)
         {

@@ -13,7 +13,8 @@ public record UpdatePromoCodeCommand(
     decimal Value,
     bool IsActive,
     DateTime? StartsAt,
-    DateTime? EndsAt) : IRequest<Result>;
+    DateTime? EndsAt,
+    int? MaxRedemptions) : IRequest<Result>;
 
 public class UpdatePromoCodeCommandValidator : AbstractValidator<UpdatePromoCodeCommand>
 {
@@ -33,6 +34,10 @@ public class UpdatePromoCodeCommandValidator : AbstractValidator<UpdatePromoCode
             .GreaterThanOrEqualTo(x => x.StartsAt!.Value)
             .When(x => x.StartsAt.HasValue && x.EndsAt.HasValue)
             .WithMessage("End date must be on or after start date.");
+        RuleFor(x => x.MaxRedemptions)
+            .GreaterThan(0)
+            .When(x => x.MaxRedemptions.HasValue)
+            .WithMessage("Max redemptions must be greater than 0.");
     }
 }
 
@@ -63,6 +68,7 @@ public class UpdatePromoCodeCommandHandler : IRequestHandler<UpdatePromoCodeComm
         promo.IsActive = request.IsActive;
         promo.StartsAt = request.StartsAt?.ToUniversalTime();
         promo.EndsAt = request.EndsAt?.ToUniversalTime();
+        promo.MaxRedemptions = request.MaxRedemptions;
 
         await _repository.UpdateAsync(promo, cancellationToken);
         return Result.Success();

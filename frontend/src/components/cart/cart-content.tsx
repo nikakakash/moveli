@@ -10,6 +10,9 @@ import { Minus, Plus, Trash, ShoppingCart, Truck, Warning } from "@phosphor-icon
 import { formatPrice } from "@/lib/format";
 import { resolveProductImage } from "@/lib/product-images";
 
+// Mirrors the backend MinOrderTotal in CreateOrderCommandHandler.
+const MIN_ORDER_TOTAL = 30;
+
 export function CartContent() {
   const t = useTranslations("cart");
   const locale = useLocale();
@@ -163,25 +166,25 @@ export function CartContent() {
             <p className="text-xs text-gray-400 mt-1">{t("freeDeliveryInfo")}</p>
 
             {/* Minimum order warning */}
-            {total < 30 && (
+            {total < MIN_ORDER_TOTAL && (
               <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 flex items-start gap-2">
                 <Warning size={16} className="text-orange-500 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-orange-700">
                   <p className="font-medium">{t("minimumOrder")}</p>
-                  <p>{t("addMore", { amount: (30 - total).toFixed(2) })}</p>
+                  <p>{t("addMore", { amount: (MIN_ORDER_TOTAL - total).toFixed(2) })}</p>
                 </div>
               </div>
             )}
 
             <Link
               href="/checkout"
-              aria-disabled={total < 30}
+              aria-disabled={total < MIN_ORDER_TOTAL}
               className={`mt-6 w-full flex items-center justify-center font-semibold py-3 rounded-lg transition ${
-                total < 30
+                total < MIN_ORDER_TOTAL
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none"
                   : "bg-moveli-gradient text-white shadow-lg shadow-moveli-purple-500/25 hover:shadow-xl"
               }`}
-              onClick={(e) => { if (total < 30) e.preventDefault(); }}
+              onClick={(e) => { if (total < MIN_ORDER_TOTAL) e.preventDefault(); }}
             >
               {t("checkout")}
             </Link>

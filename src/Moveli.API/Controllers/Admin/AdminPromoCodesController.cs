@@ -31,7 +31,7 @@ public class AdminPromoCodesController : ControllerBase
     {
         var command = new CreatePromoCodeCommand(
             request.Code, request.Type, request.Value,
-            request.IsActive, request.StartsAt, request.EndsAt);
+            request.IsActive, request.StartsAt, request.EndsAt, request.MaxRedemptions);
         var result = await _mediator.Send(command);
         return result.IsSuccess
             ? Ok(new { id = result.Value })
@@ -43,7 +43,7 @@ public class AdminPromoCodesController : ControllerBase
     {
         var command = new UpdatePromoCodeCommand(
             id, request.Code, request.Type, request.Value,
-            request.IsActive, request.StartsAt, request.EndsAt);
+            request.IsActive, request.StartsAt, request.EndsAt, request.MaxRedemptions);
         var result = await _mediator.Send(command);
         return result.IsSuccess ? NoContent() : BadRequest(new { error = result.Error });
     }

@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Moveli.API.Infrastructure.Data;
+using Moveli.API.Infrastructure.Email;
 using Moveli.API.Infrastructure.Identity;
 using Moveli.API.Infrastructure.PromoCodes;
 using Moveli.API.Infrastructure.Repositories;
 using Moveli.API.Infrastructure.Services;
+using Moveli.API.Infrastructure.Storage;
 using Moveli.Application.Auth;
 using Moveli.Application.Common;
 using Moveli.Application.Common.Behaviors;
@@ -73,6 +75,32 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddMoveliEmail(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<EmailOptions>(configuration.GetSection("Email"));
+        var options = configuration.GetSection("Email").Get<EmailOptions>() ?? new EmailOptions();
+
+        // Real SMTP when a host is configured; otherwise log emails (dev / not-yet-configured prod).
+        if (options.IsConfigured)
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        else
+            services.AddScoped<IEmailService, LoggingEmailService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddMoveliStorage(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<StorageOptions>(configuration.GetSection("Storage"));
+
+        if (string.Equals(configuration["Storage:Provider"], "S3", StringComparison.OrdinalIgnoreCase))
+            services.AddScoped<IFileStorage, S3FileStorage>();
+        else
+            services.AddScoped<IFileStorage, LocalFileStorage>();
+
+        return services;
+    }
+
     public static IServiceCollection AddMoveliApplicationServices(this IServiceCollection services)
     {
         // MediatR + Pipeline Behaviors (register from both Application and API assemblies)
@@ -92,6 +120,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUserService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IUserLookup, UserLookup>();
 
         // Repositories
         services.AddScoped<IProductRepository, ProductRepository>();

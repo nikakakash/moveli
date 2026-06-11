@@ -45,8 +45,8 @@ public class DealsQueryTests
             new() { Scope = DiscountScope.Category, TargetId = Guid.NewGuid(), Percentage = 10, Placement = DealPlacement.Featured },
             new() { Scope = DiscountScope.Category, TargetId = Guid.NewGuid(), Percentage = 5,  Placement = DealPlacement.None },
         });
-        _categories.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Category { Name = new LocalizedString("კ", "C"), Slug = "c" });
+        _categories.Setup(r => r.GetByIdsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Category>());
 
         var result = await DealsHandler().Handle(new GetDealsQuery(), CancellationToken.None);
 
@@ -60,8 +60,8 @@ public class DealsQueryTests
         {
             new() { Scope = DiscountScope.Product, TargetId = ProductId, Percentage = 20, Placement = DealPlacement.FlashSale }
         });
-        _products.Setup(r => r.GetByIdAsync(ProductId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(BuildProduct(ProductId, price: 100m));
+        _products.Setup(r => r.GetByIdsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Product> { BuildProduct(ProductId, price: 100m) });
         _discountService.Setup(s => s.CreateSnapshotAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DiscountSnapshot(
                 new Dictionary<Guid, decimal> { [ProductId] = 20m }, new Dictionary<Guid, decimal>(), new Dictionary<Guid, decimal>()));
@@ -75,6 +75,28 @@ public class DealsQueryTests
     }
 
     [Fact]
+    public async Task GetDeals_ProductScoped_InactiveProduct_KeepsDealButOmitsProductCard()
+    {
+        var inactiveId = Guid.NewGuid();
+        _discounts.Setup(r => r.GetLiveAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Discount>
+        {
+            new() { Scope = DiscountScope.Product, TargetId = inactiveId, Percentage = 20, Placement = DealPlacement.FlashSale }
+        });
+        var inactive = BuildProduct(inactiveId);
+        inactive.IsActive = false;
+        _products.Setup(r => r.GetByIdsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Product> { inactive });
+        _discountService.Setup(s => s.CreateSnapshotAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DiscountSnapshot(new Dictionary<Guid, decimal>(), new Dictionary<Guid, decimal>(), new Dictionary<Guid, decimal>()));
+
+        var result = await DealsHandler().Handle(new GetDealsQuery(), CancellationToken.None);
+
+        var deal = result.Value!.Single();
+        deal.Product.Should().BeNull();      // inactive product not surfaced as a card
+        deal.TargetName.Should().Be("P");    // name still resolved
+    }
+
+    [Fact]
     public async Task GetDeals_HomeOnly_FiltersToShowOnHome()
     {
         _discountService.Setup(s => s.CreateSnapshotAsync(It.IsAny<CancellationToken>()))
@@ -84,8 +106,8 @@ public class DealsQueryTests
             new() { Scope = DiscountScope.Brand, TargetId = Guid.NewGuid(), Percentage = 10, Placement = DealPlacement.DealsPage, ShowOnHome = true },
             new() { Scope = DiscountScope.Brand, TargetId = Guid.NewGuid(), Percentage = 10, Placement = DealPlacement.DealsPage, ShowOnHome = false },
         });
-        _brands.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Brand { Name = "B", Slug = "b" });
+        _brands.Setup(r => r.GetByIdsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Brand>());
 
         var result = await DealsHandler().Handle(new GetDealsQuery(HomeOnly: true), CancellationToken.None);
 

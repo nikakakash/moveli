@@ -25,25 +25,6 @@ public class GetOrderDetailQueryHandler : IRequestHandler<GetOrderDetailQuery, R
         if (request.UserId.HasValue && order.UserId != request.UserId.Value)
             return Result<OrderDto>.Failure("Order not found.");
 
-        return Result<OrderDto>.Success(new OrderDto(
-            order.Id,
-            order.OrderNumber,
-            order.Status,
-            order.ShippingAddress.FullName,
-            order.ShippingAddress.PhoneNumber,
-            order.ShippingAddress.City,
-            order.ShippingAddress.Street,
-            order.ShippingAddress.PostalCode,
-            order.PaymentMethod,
-            order.PaymentStatus,
-            order.Items.Select(i => new OrderItemDto(i.Id, i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.Total)).ToList(),
-            order.SubTotal,
-            order.ShippingCost,
-            order.Discount,
-            order.PromoCode,
-            order.Total,
-            order.CurrencyCode,
-            order.Notes,
-            order.CreatedAt));
+        return Result<OrderDto>.Success(order.ToDto());
     }
 }

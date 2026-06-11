@@ -1,0 +1,79 @@
+# Production-style stack. All secrets come from the environment (or a sibling .env file that is
+# NOT committed). This is host-agnostic; a managed host may instead provide Postgres/Redis.
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-moveli}
+      POSTGRES_USER: ${POSTGRES_USER:-moveli}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Moveli.API/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-moveli};Username=${POSTGRES_USER:-moveli};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__Redis: "redis:6379"
+      Jwt__Secret: ${JWT_SECRET:?set JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER:-moveli.ge}
+      Jwt__Audience: ${JWT_AUDIENCE:-moveli.ge}
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN:-https://moveli.ge}
+      Frontend__BaseUrl: ${FRONTEND_ORIGIN:-https://moveli.ge}
+      DataProtection__KeysPath: /keys
+      Storage__UploadsPath: /uploads
+      # Optional: object storage (set Storage__Provider=S3 to enable durable uploads)
+      Storage__Provider: ${STORAGE_PROVIDER:-Local}
+      Storage__S3__ServiceUrl: ${S3_SERVICE_URL:-}
+      Storage__S3__Bucket: ${S3_BUCKET:-}
+      Storage__S3__AccessKey: ${S3_ACCESS_KEY:-}
+      Storage__S3__SecretKey: ${S3_SECRET_KEY:-}
+      Storage__S3__PublicBaseUrl: ${S3_PUBLIC_BASE_URL:-}
+      # Optional: SMTP for transactional email (omit Email__Host to log instead of send)
+      Email__Host: ${SMTP_HOST:-}
+      Email__Port: ${SMTP_PORT:-587}
+      Email__User: ${SMTP_USER:-}
+      Email__Password: ${SMTP_PASSWORD:-}
+      Email__FromAddress: ${SMTP_FROM:-no-reply@moveli.ge}
+      # Optional: provision the first admin (created only if both are set)
+      Seed__AdminEmail: ${SEED_ADMIN_EMAIL:-}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-}
+      # Trust the proxy in front of the API (set to the proxy network or true behind a private LB)
+      ForwardedHeaders__TrustAllProxies: ${TRUST_ALL_PROXIES:-true}
+    volumes:
+      - dp_keys:/keys
+      - uploads:/uploads
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://moveli.ge}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  redis_data:
+  dp_keys:
+  uploads:

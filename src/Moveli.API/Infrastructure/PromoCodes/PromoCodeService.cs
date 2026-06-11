@@ -29,8 +29,14 @@ public class PromoCodeService : IPromoCodeService
         if (await _repository.HasUserRedeemedAsync(promo.Id, userId, cancellationToken))
             return Result<PromoValidationResult>.Failure("You have already used this promo code.");
 
+        // Best-effort early rejection when the global cap is already reached. The authoritative,
+        // race-free enforcement happens atomically at redemption time in the order handler.
+        if (promo.MaxRedemptions is int cap
+            && await _repository.GetRedemptionCountAsync(promo.Id, cancellationToken) >= cap)
+            return Result<PromoValidationResult>.Failure("This promo code is no longer available.");
+
         var discount = promo.ComputeDiscount(subtotal);
         return Result<PromoValidationResult>.Success(
-            new PromoValidationResult(promo.Id, promo.Code, discount));
+            new PromoValidationResult(promo.Id, promo.Code, discount, promo.MaxRedemptions));
     }
 }

@@ -100,9 +100,8 @@ export function CheckoutContent() {
   // that isn't in the list, surface it as an extra option so it stays selected.
   const cityOptions = CITIES.includes(city) ? CITIES : [city, ...CITIES];
 
-  // Payment
-  const [paymentMethod, setPaymentMethod] =
-    useState<PaymentMethod>("CashOnDelivery");
+  // Payment — cash-on-delivery only for v1 (no online card gateway yet).
+  const paymentMethod: PaymentMethod = "CashOnDelivery";
   const [notes, setNotes] = useState("");
 
   // Shipping cost calculation
@@ -396,35 +395,19 @@ export function CheckoutContent() {
                 <h3 className="font-medium text-gray-900 mb-3">
                   {t("payment")}
                 </h3>
+                {/* Cash-on-delivery only for v1 — online card payment is not yet integrated. */}
                 <div className="space-y-2">
-                  {[
-                    {
-                      value: "CashOnDelivery" as PaymentMethod,
-                      label: t("cashOnDelivery"),
-                    },
-                    {
-                      value: "Card" as PaymentMethod,
-                      label: t("bankCard"),
-                    },
-                  ].map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition ${
-                        paymentMethod === opt.value
-                          ? "border-moveli-purple-400 bg-moveli-purple-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="payment"
-                        checked={paymentMethod === opt.value}
-                        onChange={() => setPaymentMethod(opt.value)}
-                        className="accent-moveli-purple-500"
-                      />
-                      <span className="text-sm font-medium">{opt.label}</span>
-                    </label>
-                  ))}
+                  <label className="flex items-center gap-3 p-4 border border-moveli-purple-400 bg-moveli-purple-50 rounded-lg">
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked
+                      readOnly
+                      className="accent-moveli-purple-500"
+                    />
+                    <span className="text-sm font-medium">{t("cashOnDelivery")}</span>
+                  </label>
+                  <p className="text-xs text-gray-400">{t("cardComingSoon")}</p>
                 </div>
               </div>
 

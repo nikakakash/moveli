@@ -32,6 +32,7 @@ public class GetCategoryBySlugQueryHandler : IRequestHandler<GetCategoryBySlugQu
             category.ParentCategoryId,
             category.ImageUrl,
             category.SortOrder,
-            category.IsActive));
+            category.IsActive,
+            category.IsComingSoon));
     }
 }

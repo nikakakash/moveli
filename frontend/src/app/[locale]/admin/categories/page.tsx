@@ -29,6 +29,7 @@ export default function AdminCategoriesPage() {
     descriptionEn: "",
     sortOrder: 0,
     isActive: true,
+    isComingSoon: false,
   });
 
   const fetchCategories = useCallback(async () => {
@@ -55,6 +56,7 @@ export default function AdminCategoriesPage() {
       descriptionEn: "",
       sortOrder: 0,
       isActive: true,
+      isComingSoon: false,
     });
     setEditingId(null);
     setShowForm(false);
@@ -84,6 +86,7 @@ export default function AdminCategoriesPage() {
       slug: cat.slug,
       sortOrder: cat.sortOrder,
       isActive: cat.isActive,
+      isComingSoon: cat.isComingSoon,
       imageUrl: cat.imageUrl ?? undefined,
     });
     setEditingId(cat.id);
@@ -191,6 +194,15 @@ export default function AdminCategoriesPage() {
                 />
                 {t("active")}
               </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.isComingSoon}
+                  onChange={(e) => setForm({ ...form, isComingSoon: e.target.checked })}
+                  className="accent-moveli-purple-500"
+                />
+                {t("comingSoon")}
+              </label>
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -284,6 +296,11 @@ export default function AdminCategoriesPage() {
                     >
                       {cat.isActive ? "Active" : "Inactive"}
                     </span>
+                    {cat.isComingSoon && (
+                      <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                        {t("comingSoon")}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 flex gap-1">
                     <button

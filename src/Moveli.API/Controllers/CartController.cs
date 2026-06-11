@@ -76,6 +76,7 @@ public class CartController : ControllerBase
             HttpContext.Response.Cookies.Append("cart_session", sessionId, new CookieOptions
             {
                 HttpOnly = true,
+                Secure = true,
                 SameSite = SameSiteMode.Lax,
                 MaxAge = TimeSpan.FromDays(30)
             });

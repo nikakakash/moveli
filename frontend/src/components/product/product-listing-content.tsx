@@ -289,6 +289,7 @@ export function ProductListingContent({
                   {currentPage > 1 && (
                     <button
                       onClick={() => goToPage(currentPage - 1)}
+                      aria-label={t("prevPage")}
                       className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50"
                     >
                       ←
@@ -300,6 +301,8 @@ export function ProductListingContent({
                       <button
                         key={page}
                         onClick={() => goToPage(page)}
+                        aria-label={t("pageLabel", { page })}
+                        aria-current={page === currentPage ? "page" : undefined}
                         className={`w-10 h-10 rounded-lg text-sm font-medium ${
                           page === currentPage
                             ? "bg-moveli-gradient text-white"
@@ -313,6 +316,7 @@ export function ProductListingContent({
                   {currentPage < totalPages && (
                     <button
                       onClick={() => goToPage(currentPage + 1)}
+                      aria-label={t("nextPage")}
                       className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50"
                     >
                       →

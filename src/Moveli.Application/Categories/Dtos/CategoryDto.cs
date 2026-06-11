@@ -10,7 +10,8 @@ public record CategoryDto(
     Guid? ParentCategoryId,
     string? ImageUrl,
     int SortOrder,
-    bool IsActive);
+    bool IsActive,
+    bool IsComingSoon);
 
 public record CategoryTreeDto(
     Guid Id,
@@ -20,6 +21,7 @@ public record CategoryTreeDto(
     string? ImageUrl,
     int SortOrder,
     bool IsActive,
+    bool IsComingSoon,
     List<CategoryTreeDto> Children);
 
 public record CreateCategoryRequest(
@@ -31,7 +33,8 @@ public record CreateCategoryRequest(
     Guid? ParentCategoryId,
     string? ImageUrl,
     int SortOrder,
-    bool IsActive);
+    bool IsActive,
+    bool IsComingSoon);
 
 public record UpdateCategoryRequest(
     string NameKa,
@@ -42,4 +45,5 @@ public record UpdateCategoryRequest(
     Guid? ParentCategoryId,
     string? ImageUrl,
     int SortOrder,
-    bool IsActive);
+    bool IsActive,
+    bool IsComingSoon);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { getAdminCustomers, getAdminCustomerDetail } from "@/lib/api/admin";
 import { formatPrice, formatPhone } from "@/lib/format";
@@ -20,10 +20,13 @@ export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<AdminCustomerDetailDto | null>(null);
 
+  const requestRef = useRef(0);
   const fetchCustomers = useCallback(async () => {
+    const reqId = ++requestRef.current;
     setLoading(true);
     try {
       const result = await getAdminCustomers({
@@ -31,13 +34,23 @@ export default function AdminCustomersPage() {
         pageSize,
         search: search || undefined,
       });
+      if (reqId !== requestRef.current) return; // a newer request superseded this one
       setData(result);
     } catch {
-      toast.error("Failed to load customers");
+      if (reqId === requestRef.current) toast.error("Failed to load customers");
     } finally {
-      setLoading(false);
+      if (reqId === requestRef.current) setLoading(false);
     }
   }, [page, pageSize, search]);
+
+  // Debounce search so we fetch once the user pauses, not on every keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
 
   useEffect(() => {
     fetchCustomers();
@@ -138,11 +151,8 @@ export default function AdminCustomersPage() {
         <input
           type="text"
           placeholder={t("search")}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-moveli-purple-400 w-64"
         />
       </div>

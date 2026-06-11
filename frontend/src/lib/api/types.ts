@@ -74,6 +74,7 @@ export interface CategoryDto {
   imageUrl: string | null;
   sortOrder: number;
   isActive: boolean;
+  isComingSoon: boolean;
 }
 
 export interface CategoryTreeDto {
@@ -84,6 +85,7 @@ export interface CategoryTreeDto {
   imageUrl: string | null;
   sortOrder: number;
   isActive: boolean;
+  isComingSoon: boolean;
   children: CategoryTreeDto[];
 }
 
@@ -318,6 +320,7 @@ export interface CreateCategoryRequest {
   imageUrl?: string;
   sortOrder: number;
   isActive: boolean;
+  isComingSoon: boolean;
 }
 
 export interface UpdateCategoryRequest extends CreateCategoryRequest {}
@@ -381,6 +384,7 @@ export interface DealDto {
   scope: DiscountScope;
   targetId: string;
   targetName: string;
+  targetSlug: string | null;
   percentage: number;
   titleKa: string;
   titleEn: string;
@@ -404,6 +408,7 @@ export interface PromoCodeDto {
   isActive: boolean;
   startsAt: string | null;
   endsAt: string | null;
+  maxRedemptions: number | null;
   redemptionCount: number;
 }
 
@@ -419,6 +424,7 @@ export interface CreatePromoCodeRequest {
   isActive: boolean;
   startsAt: string | null;
   endsAt: string | null;
+  maxRedemptions: number | null;
 }
 
 export interface UpdatePromoCodeRequest extends CreatePromoCodeRequest {

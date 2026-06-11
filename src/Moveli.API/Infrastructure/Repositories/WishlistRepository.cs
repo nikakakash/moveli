@@ -18,6 +18,7 @@ public class WishlistRepository : IWishlistRepository
     public async Task<List<Wishlist>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Wishlists
+            .AsNoTracking()
             .Include(w => w.Product)
                 .ThenInclude(p => p.Category)
             .Include(w => w.Product)

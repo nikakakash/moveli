@@ -140,7 +140,12 @@
       "Bash(python -m site --user-base)",
       "Bash(ls \"$\\(python -m site --user-base\\)/Scripts\")",
       "Bash(pip show *)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "PowerShell($enc = New-Object System.Text.UTF8Encoding\\($false\\); foreach \\($f in @\\('C:\\\\Users\\\\Nika\\\\Desktop\\\\MOveli\\\\frontend\\\\messages\\\\ka.json','C:\\\\Users\\\\Nika\\\\Desktop\\\\MOveli\\\\frontend\\\\messages\\\\en.json'\\)\\) { $txt = [IO.File]::ReadAllText\\($f\\); if \\($txt[0] -eq [char]0xFEFF\\) { $txt = $txt.Substring\\(1\\) }; [IO.File]::WriteAllText\\($f, $txt, $enc\\) }; node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('C:/Users/Nika/Desktop/MOveli/frontend/messages/ka.json','utf8'\\)\\); JSON.parse\\(require\\('fs'\\).readFileSync\\('C:/Users/Nika/Desktop/MOveli/frontend/messages/en.json','utf8'\\)\\); console.log\\('both JSON valid'\\)\")",
+      "Bash(grep -iv \"CacheInvalidator\\\\|HealthCheck\\\\|//\")",
+      "Bash(cd /c/Users/Nika/Desktop/MOveli/frontend/src && find . -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) | head -200)",
+      "Bash(xargs ls)",
+      "Bash(xargs cat)"
     ]
   },
   "enabledPlugins": {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { getAdminOrders, updateOrderStatus } from "@/lib/api/admin";
 import { formatPrice } from "@/lib/format";
@@ -34,9 +34,12 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "">("");
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
+  const requestRef = useRef(0);
   const fetchOrders = useCallback(async () => {
+    const reqId = ++requestRef.current;
     setLoading(true);
     try {
       const result = await getAdminOrders({
@@ -45,13 +48,23 @@ export default function AdminOrdersPage() {
         status: filterStatus || undefined,
         search: search || undefined,
       });
+      if (reqId !== requestRef.current) return; // a newer request superseded this one
       setData(result);
     } catch {
-      toast.error("Failed to load orders");
+      if (reqId === requestRef.current) toast.error("Failed to load orders");
     } finally {
-      setLoading(false);
+      if (reqId === requestRef.current) setLoading(false);
     }
   }, [page, pageSize, filterStatus, search]);
+
+  // Debounce search so we fetch once the user pauses, not on every keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
 
   useEffect(() => {
     fetchOrders();
@@ -76,11 +89,8 @@ export default function AdminOrdersPage() {
         <input
           type="text"
           placeholder={t("search")}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-moveli-purple-400 w-64"
         />
         <select

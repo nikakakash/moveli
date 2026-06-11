@@ -1,53 +1,38 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://localhost:5001/api";
 
+// The access token is held in memory only. The refresh token lives in an HttpOnly cookie set
+// by the API and is never accessible to JavaScript, so it can't be exfiltrated via XSS.
 let accessToken: string | null = null;
-let refreshToken: string | null = null;
 let refreshPromise: Promise<boolean> | null = null;
 
-export function setTokens(access: string, refresh: string) {
+export function setTokens(access: string) {
   accessToken = access;
-  refreshToken = refresh;
-  if (typeof window !== "undefined") {
-    localStorage.setItem("refreshToken", refresh);
-  }
 }
 
 export function clearTokens() {
   accessToken = null;
-  refreshToken = null;
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("refreshToken");
-  }
 }
 
 export function getAccessToken() {
   return accessToken;
 }
 
-export function getStoredRefreshToken() {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("refreshToken");
-  }
-  return null;
-}
-
 async function refreshAuth(): Promise<boolean> {
-  const token = refreshToken || getStoredRefreshToken();
-  if (!token) return false;
-
   try {
+    // No body token: the refresh cookie is sent automatically via credentials: "include".
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: token }),
+      body: "{}",
+      credentials: "include",
     });
     if (!res.ok) {
       clearTokens();
       return false;
     }
     const data = await res.json();
-    setTokens(data.accessToken, data.refreshToken);
+    setTokens(data.accessToken);
     return true;
   } catch {
     clearTokens();
@@ -84,7 +69,9 @@ export async function apiFetch<T>(
     credentials: "include",
   });
 
-  if (res.status === 401 && (accessToken || getStoredRefreshToken())) {
+  // On 401, try a cookie-based refresh once. We can't read the HttpOnly refresh cookie from JS,
+  // so attempt whenever the caller expected auth or we held an access token.
+  if (res.status === 401 && (accessToken || requireAuth)) {
     if (!refreshPromise) {
       refreshPromise = refreshAuth();
     }

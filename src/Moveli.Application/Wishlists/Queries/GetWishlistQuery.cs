@@ -1,6 +1,7 @@
 using MediatR;
 using Moveli.Application.Common;
-using Moveli.Application.Products.DTOs;
+using Moveli.Application.Discounts;
+using Moveli.Application.Products;
 using Moveli.Application.Wishlists.DTOs;
 using Moveli.Domain.Interfaces;
 
@@ -11,35 +12,25 @@ public record GetWishlistQuery(Guid UserId) : IRequest<Result<List<WishlistItemD
 public class GetWishlistQueryHandler : IRequestHandler<GetWishlistQuery, Result<List<WishlistItemDto>>>
 {
     private readonly IWishlistRepository _wishlistRepository;
+    private readonly IDiscountService _discountService;
 
-    public GetWishlistQueryHandler(IWishlistRepository wishlistRepository)
+    public GetWishlistQueryHandler(IWishlistRepository wishlistRepository, IDiscountService discountService)
     {
         _wishlistRepository = wishlistRepository;
+        _discountService = discountService;
     }
 
     public async Task<Result<List<WishlistItemDto>>> Handle(GetWishlistQuery request, CancellationToken cancellationToken)
     {
         var items = await _wishlistRepository.GetByUserIdAsync(request.UserId, cancellationToken);
 
+        // Price wishlist items through the live discount snapshot, same as every other listing.
+        var discounts = await _discountService.CreateSnapshotAsync(cancellationToken);
+
         var dtos = items.Select(w => new WishlistItemDto(
             w.Id,
             w.ProductId,
-            new ProductListDto(
-                w.Product.Id,
-                w.Product.Name.Ka,
-                w.Product.Name.En,
-                w.Product.Slug,
-                w.Product.Price,
-                w.Product.CompareAtPrice,
-                w.Product.Images.FirstOrDefault(i => i.IsMain)?.Url ?? w.Product.Images.FirstOrDefault()?.Url,
-                w.Product.Category.Name.Ka,
-                w.Product.Category.Name.En,
-                w.Product.Brand.Name,
-                w.Product.IsActive,
-                w.Product.IsFeatured,
-                w.Product.Rating,
-                w.Product.ReviewCount,
-                w.Product.StockQuantity),
+            w.Product.ToListDto(discounts),
             w.AddedAt)).ToList();
 
         return Result<List<WishlistItemDto>>.Success(dtos);

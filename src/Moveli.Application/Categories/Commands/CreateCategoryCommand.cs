@@ -18,7 +18,8 @@ public record CreateCategoryCommand(
     Guid? ParentCategoryId,
     string? ImageUrl,
     int SortOrder,
-    bool IsActive) : IRequest<Result<CategoryDto>>;
+    bool IsActive,
+    bool IsComingSoon) : IRequest<Result<CategoryDto>>;
 
 public class CreateCategoryCommandValidator : AbstractValidator<CreateCategoryCommand>
 {
@@ -65,7 +66,8 @@ public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryComman
             ParentCategoryId = request.ParentCategoryId,
             ImageUrl = request.ImageUrl,
             SortOrder = request.SortOrder,
-            IsActive = request.IsActive
+            IsActive = request.IsActive,
+            IsComingSoon = request.IsComingSoon
         };
 
         category = await _categoryRepository.AddAsync(category, cancellationToken);
@@ -74,6 +76,6 @@ public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryComman
         return Result<CategoryDto>.Success(new CategoryDto(
             category.Id, category.Name.Ka, category.Name.En, category.Slug,
             category.Description?.Ka, category.Description?.En,
-            category.ParentCategoryId, category.ImageUrl, category.SortOrder, category.IsActive));
+            category.ParentCategoryId, category.ImageUrl, category.SortOrder, category.IsActive, category.IsComingSoon));
     }
 }

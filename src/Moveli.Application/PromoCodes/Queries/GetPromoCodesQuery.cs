@@ -32,6 +32,7 @@ public class GetPromoCodesQueryHandler : IRequestHandler<GetPromoCodesQuery, Res
             p.IsActive,
             p.StartsAt,
             p.EndsAt,
+            p.MaxRedemptions,
             redemptionCounts.GetValueOrDefault(p.Id))).ToList();
 
         return Result<PagedResult<PromoCodeDto>>.Success(

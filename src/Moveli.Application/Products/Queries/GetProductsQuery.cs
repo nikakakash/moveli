@@ -30,8 +30,13 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, Result<
 
     public async Task<Result<PagedResult<ProductListDto>>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
+        // Clamp client-supplied paging so an oversized PageSize (or negative Page) can't
+        // exhaust DB/app memory on this anonymous endpoint.
+        var page = Math.Max(1, request.Page);
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
         var (items, totalCount) = await _productRepository.GetProductsAsync(
-            request.Page, request.PageSize,
+            page, pageSize,
             request.CategoryId, request.BrandId,
             request.MinPrice, request.MaxPrice,
             request.MinRating,
@@ -40,28 +45,9 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, Result<
 
         var discounts = await _discountService.CreateSnapshotAsync(cancellationToken);
 
-        var dtos = items.Select(p =>
-        {
-            var (price, compareAtPrice) = discounts.Apply(p);
-            return new ProductListDto(
-            p.Id,
-            p.Name.Ka,
-            p.Name.En,
-            p.Slug,
-            price,
-            compareAtPrice,
-            p.Images.FirstOrDefault(i => i.IsMain)?.Url ?? p.Images.FirstOrDefault()?.Url,
-            p.Category.Name.Ka,
-            p.Category.Name.En,
-            p.Brand.Name,
-            p.IsActive,
-            p.IsFeatured,
-            p.Rating,
-            p.ReviewCount,
-            p.StockQuantity);
-        }).ToList();
+        var dtos = items.Select(p => p.ToListDto(discounts)).ToList();
 
         return Result<PagedResult<ProductListDto>>.Success(
-            new PagedResult<ProductListDto>(dtos, totalCount, request.Page, request.PageSize));
+            new PagedResult<ProductListDto>(dtos, totalCount, page, pageSize));
     }
 }

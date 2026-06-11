@@ -25,7 +25,7 @@ public class AdminCategoriesController : ControllerBase
             request.NameKa, request.NameEn, request.Slug,
             request.DescriptionKa, request.DescriptionEn,
             request.ParentCategoryId, request.ImageUrl,
-            request.SortOrder, request.IsActive);
+            request.SortOrder, request.IsActive, request.IsComingSoon);
 
         var result = await _mediator.Send(command);
         return result.IsSuccess
@@ -40,7 +40,7 @@ public class AdminCategoriesController : ControllerBase
             id, request.NameKa, request.NameEn, request.Slug,
             request.DescriptionKa, request.DescriptionEn,
             request.ParentCategoryId, request.ImageUrl,
-            request.SortOrder, request.IsActive);
+            request.SortOrder, request.IsActive, request.IsComingSoon);
 
         var result = await _mediator.Send(command);
         return result.IsSuccess ? NoContent() : BadRequest(new { error = result.Error });

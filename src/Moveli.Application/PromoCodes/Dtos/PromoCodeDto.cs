@@ -10,6 +10,7 @@ public record PromoCodeDto(
     bool IsActive,
     DateTime? StartsAt,
     DateTime? EndsAt,
+    int? MaxRedemptions,
     int RedemptionCount);
 
 public record CreatePromoCodeRequest(
@@ -18,7 +19,8 @@ public record CreatePromoCodeRequest(
     decimal Value,
     bool IsActive,
     DateTime? StartsAt,
-    DateTime? EndsAt);
+    DateTime? EndsAt,
+    int? MaxRedemptions);
 
 public record UpdatePromoCodeRequest(
     string Code,
@@ -26,4 +28,5 @@ public record UpdatePromoCodeRequest(
     decimal Value,
     bool IsActive,
     DateTime? StartsAt,
-    DateTime? EndsAt);
+    DateTime? EndsAt,
+    int? MaxRedemptions);

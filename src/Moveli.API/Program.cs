@@ -17,6 +17,8 @@ builder.Services.AddMoveliDatabase(builder.Configuration);
 builder.Services.AddMoveliIdentity();
 builder.Services.AddMoveliAuthentication(builder.Configuration);
 builder.Services.AddMoveliApplicationServices();
+builder.Services.AddMoveliEmail(builder.Configuration);
+builder.Services.AddMoveliStorage(builder.Configuration);
 
 // CORS
 builder.Services.AddCors(options =>
@@ -36,11 +38,20 @@ builder.Services.AddCors(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = 429;
-    options.AddFixedWindowLimiter("auth", limiter =>
+
+    // Auth endpoints (login/register/refresh) — partitioned per client IP so one caller
+    // can't exhaust the budget for everyone, and tightened to blunt brute force /
+    // credential stuffing. Per-account Identity lockout (5 attempts / 15 min) is the
+    // complementary second layer that protects a single targeted account.
+    options.AddPolicy("auth", httpContext =>
     {
-        limiter.PermitLimit = 10;
-        limiter.Window = TimeSpan.FromMinutes(1);
-        limiter.QueueLimit = 0;
+        var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        });
     });
 
     // Global limiter throttles every endpoint that doesn't opt into a stricter named
@@ -56,6 +67,17 @@ builder.Services.AddRateLimiter(options =>
             QueueLimit = 0
         });
     });
+
+    // Emit Retry-After and a structured error body on rejection so clients can back off.
+    options.OnRejected = async (context, token) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers.RetryAfter =
+                ((int)retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { error = "Too many requests. Please try again later." }, token);
+    };
 });
 
 // In-process cache for read-mostly reference data (categories, brands, featured products).
@@ -92,12 +114,39 @@ builder.Services.AddDataProtection()
     .SetApplicationName("Moveli");
 
 // Forwarded headers so scheme + client IP are correct behind a proxy / load balancer.
+// Only trust X-Forwarded-* from explicitly configured proxies — otherwise any client could
+// spoof X-Forwarded-For to rotate the rate-limit partition key and bypass throttling.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // Clear the default localhost-only restriction; the proxy network is trusted by deployment.
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
+
+    var knownProxies = builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>();
+    var knownNetworks = builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>();
+    var trustAllProxies = builder.Configuration.GetValue<bool>("ForwardedHeaders:TrustAllProxies");
+
+    if (trustAllProxies)
+    {
+        // Opt-in escape hatch for PaaS where the proxy IP isn't known ahead of time.
+        // Safe ONLY when the API is not directly reachable from the public internet.
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    }
+    else if (knownProxies is { Length: > 0 } || knownNetworks is { Length: > 0 })
+    {
+        options.KnownProxies.Clear();
+        options.KnownNetworks.Clear();
+        foreach (var ip in knownProxies ?? [])
+            if (System.Net.IPAddress.TryParse(ip, out var addr))
+                options.KnownProxies.Add(addr);
+        foreach (var cidr in knownNetworks ?? [])
+        {
+            var parts = cidr.Split('/');
+            if (parts.Length == 2 && System.Net.IPAddress.TryParse(parts[0], out var prefix)
+                && int.TryParse(parts[1], out var len))
+                options.KnownNetworks.Add(new IPNetwork(prefix, len));
+        }
+    }
+    // else: keep the framework default (loopback only) — correct for local development.
 });
 
 // Health checks for LB / orchestrator probes.
@@ -175,7 +224,11 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
     await context.Database.MigrateAsync();
-    await MoveliDbContextSeed.SeedAsync(context, userManager, roleManager);
+    await MoveliDbContextSeed.SeedAsync(
+        context, userManager, roleManager,
+        seedDemoData: app.Environment.IsDevelopment(),
+        adminEmail: builder.Configuration["Seed:AdminEmail"],
+        adminPassword: builder.Configuration["Seed:AdminPassword"]);
 }
 
 // Must run before anything that reads scheme / client IP (rate limiter, HTTPS redirect).
@@ -231,6 +284,25 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Prevent shared proxies / CDNs / browser cache from storing per-user PII. Applies to any
+// authenticated response and to the auth endpoints (which return tokens). Registered via
+// OnStarting so the header is stamped no matter where the response body is produced, and
+// after UseAuthentication so User.Identity is populated.
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        if (context.User?.Identity?.IsAuthenticated == true
+            || context.Request.Path.StartsWithSegments("/api/auth"))
+        {
+            context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, private";
+            context.Response.Headers.Pragma = "no-cache";
+        }
+        return Task.CompletedTask;
+    });
+    await next();
+});
 app.MapControllers();
 app.MapHealthChecks("/health");
 

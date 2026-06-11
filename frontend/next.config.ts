@@ -6,6 +6,13 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5026";
 
 const nextConfig: NextConfig = {
+  // Self-contained server bundle for Docker/containerized deploys.
+  output: "standalone",
+  // Tree-shake the Phosphor icon barrel (not in Next's default list) so importing a few
+  // icons doesn't pull the whole package into the client bundle.
+  experimental: {
+    optimizePackageImports: ["@phosphor-icons/react"],
+  },
   images: {
     remotePatterns: [
       {

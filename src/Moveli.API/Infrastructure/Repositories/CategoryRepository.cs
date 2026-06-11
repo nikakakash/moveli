@@ -17,6 +17,7 @@ public class CategoryRepository : ICategoryRepository
     public async Task<List<Category>> GetTreeAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Categories
+            .AsNoTracking()
             .Include(c => c.Children)
             .OrderBy(c => c.SortOrder)
             .ToListAsync(cancellationToken);
@@ -34,6 +35,20 @@ public class CategoryRepository : ICategoryRepository
         return await _context.Categories
             .Include(c => c.Children)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+    }
+
+    public async Task<List<Category>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0) return [];
+        return await _context.Categories
+            .AsNoTracking()
+            .Where(c => ids.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories.AnyAsync(c => c.Id == id, cancellationToken);
     }
 
     public async Task<int> GetProductCountAsync(Guid categoryId, CancellationToken cancellationToken = default)

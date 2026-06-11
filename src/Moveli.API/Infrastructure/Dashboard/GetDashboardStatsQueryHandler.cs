@@ -1,8 +1,6 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moveli.API.Infrastructure.Data;
-using Moveli.API.Infrastructure.Identity;
 using Moveli.Application.Common;
 using Moveli.Application.Dashboard.DTOs;
 using Moveli.Application.Dashboard.Queries;
@@ -13,12 +11,10 @@ namespace Moveli.API.Infrastructure.Dashboard;
 public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQuery, Result<DashboardStatsDto>>
 {
     private readonly MoveliDbContext _context;
-    private readonly UserManager<ApplicationUser> _userManager;
 
-    public GetDashboardStatsQueryHandler(MoveliDbContext context, UserManager<ApplicationUser> userManager)
+    public GetDashboardStatsQueryHandler(MoveliDbContext context)
     {
         _context = context;
-        _userManager = userManager;
     }
 
     public async Task<Result<DashboardStatsDto>> Handle(GetDashboardStatsQuery request, CancellationToken cancellationToken)
@@ -29,8 +25,10 @@ public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQu
             .Select(o => (decimal?)o.Total)
             .SumAsync(cancellationToken) ?? 0m;
         var totalProducts = await _context.Products.CountAsync(cancellationToken);
-        var customers = await _userManager.GetUsersInRoleAsync("Customer");
-        var totalCustomers = customers.Count;
+
+        // Count customers in SQL via the role join instead of materializing every user.
+        var totalCustomers = await _context.UserRoles
+            .CountAsync(ur => _context.Roles.Any(r => r.Id == ur.RoleId && r.Name == "Customer"), cancellationToken);
 
         var recentOrders = await _context.Orders
             .OrderByDescending(o => o.CreatedAt)

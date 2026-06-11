@@ -64,21 +64,29 @@ export function ProductCard({
           </span>
         )}
 
-        {/* Wishlist */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onWishlistToggle?.();
-          }}
-          className={`absolute top-2 right-2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center transition hover:bg-white hover:text-red-500 ${
-            isWishlisted
-              ? "opacity-100 text-red-500"
-              : "opacity-0 group-hover:opacity-100"
-          }`}
-        >
-          <Heart size={16} weight={isWishlisted ? "fill" : "regular"} />
-        </button>
+        {/* Wishlist — only shown where a toggle handler is wired (e.g. the wishlist page). */}
+        {onWishlistToggle && (
+          <button
+            aria-label={
+              isWishlisted
+                ? locale === "ka" ? "სურვილების სიიდან ამოშლა" : "Remove from wishlist"
+                : locale === "ka" ? "სურვილების სიაში დამატება" : "Add to wishlist"
+            }
+            aria-pressed={isWishlisted}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onWishlistToggle();
+            }}
+            className={`absolute top-2 right-2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center transition hover:bg-white hover:text-red-500 ${
+              isWishlisted
+                ? "opacity-100 text-red-500"
+                : "opacity-0 group-hover:opacity-100"
+            }`}
+          >
+            <Heart size={16} weight={isWishlisted ? "fill" : "regular"} />
+          </button>
+        )}
       </div>
 
       {/* Info */}

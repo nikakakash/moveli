@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/.vs/
+**/node_modules/
+frontend/.next/
+frontend/out/
+**/*.user
+**/appsettings.Development.json
+**/keys/
+**/uploads/
+.git/
+.github/
+docs/
+*.md

@@ -9,3 +9,7 @@ public record RegisterRequest(string Email, string Password, string FirstName, s
 public record LoginRequest(string Email, string Password);
 
 public record RefreshTokenRequest(string RefreshToken);
+
+public record ForgotPasswordRequest(string Email);
+
+public record ResetPasswordRequest(string Email, string Token, string NewPassword);

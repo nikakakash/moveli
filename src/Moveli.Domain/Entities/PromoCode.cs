@@ -11,6 +11,9 @@ public class PromoCode : BaseEntity
     public DateTime? StartsAt { get; set; }
     public DateTime? EndsAt { get; set; }
 
+    /// <summary>Maximum total redemptions across all users. Null = unlimited.</summary>
+    public int? MaxRedemptions { get; set; }
+
     public bool IsLive(DateTime now) =>
         IsActive
         && (StartsAt == null || now >= StartsAt)

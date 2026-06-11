@@ -26,5 +26,9 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
         RuleFor(x => x.ShippingPhoneNumber).NotEmpty().MaximumLength(50);
         RuleFor(x => x.ShippingCity).NotEmpty().MaximumLength(100);
         RuleFor(x => x.ShippingStreet).NotEmpty().MaximumLength(500);
+        // v1 is cash-on-delivery only; no online card gateway is integrated yet.
+        RuleFor(x => x.PaymentMethod)
+            .Equal(PaymentMethod.CashOnDelivery)
+            .WithMessage("Only cash on delivery is available at this time.");
     }
 }

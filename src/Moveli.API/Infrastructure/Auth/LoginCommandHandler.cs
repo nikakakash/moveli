@@ -34,20 +34,20 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
 
     public async Task<Result<AuthResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
+        // Uniform failure message for every branch (no such user, wrong password, locked out)
+        // so an attacker cannot enumerate accounts or detect lock state pre-authentication.
+        const string genericFailure = "Invalid email or password.";
+
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
-            return Result<AuthResponse>.Failure("Invalid email or password.");
+            return Result<AuthResponse>.Failure(genericFailure);
 
         if (await _userManager.IsLockedOutAsync(user))
-            return Result<AuthResponse>.Failure("Account is locked. Please try again later.");
+            return Result<AuthResponse>.Failure(genericFailure);
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
         if (!signInResult.Succeeded)
-        {
-            if (signInResult.IsLockedOut)
-                return Result<AuthResponse>.Failure("Account is locked. Please try again later.");
-            return Result<AuthResponse>.Failure("Invalid email or password.");
-        }
+            return Result<AuthResponse>.Failure(genericFailure);
 
         var roles = await _userManager.GetRolesAsync(user);
         var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!, roles);

@@ -46,6 +46,7 @@ public class GetCategoryTreeQueryHandler : IRequestHandler<GetCategoryTreeQuery,
             category.ImageUrl,
             category.SortOrder,
             category.IsActive,
+            category.IsComingSoon,
             category.Children
                 .OrderBy(c => c.SortOrder)
                 .Select(c => MapToTree(c))

@@ -25,6 +25,7 @@ const emptyForm: CreatePromoCodeRequest = {
   isActive: true,
   startsAt: null,
   endsAt: null,
+  maxRedemptions: null,
 };
 
 // "2026-05-29T14:30:00Z" -> "2026-05-29" for date inputs
@@ -107,6 +108,7 @@ export default function AdminPromoCodesPage() {
       isActive: c.isActive,
       startsAt: toDateInput(c.startsAt),
       endsAt: toDateInput(c.endsAt),
+      maxRedemptions: c.maxRedemptions,
     });
     setEditingId(c.id);
     setShowForm(true);
@@ -257,6 +259,26 @@ export default function AdminPromoCodesPage() {
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("promoCodeMaxRedemptions")}
+              </label>
+              <input
+                type="number"
+                min={1}
+                step="1"
+                placeholder={t("promoCodeUnlimited")}
+                value={form.maxRedemptions ?? ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    maxRedemptions:
+                      e.target.value === "" ? null : parseInt(e.target.value, 10) || null,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
             <div className="col-span-2 flex gap-3">
               <button
                 type="submit"
@@ -337,6 +359,7 @@ export default function AdminPromoCodesPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {c.redemptionCount}
+                      {c.maxRedemptions != null ? ` / ${c.maxRedemptions}` : ""}
                     </td>
                     <td className="px-4 py-3 flex gap-1">
                       <button

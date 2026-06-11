@@ -8,7 +8,21 @@ namespace Moveli.API.Infrastructure.Data;
 
 public static class MoveliDbContextSeed
 {
-    public static async Task SeedAsync(MoveliDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<Guid>> roleManager)
+    /// <summary>
+    /// Seeds baseline data. Roles and the singleton settings row are always seeded. Demo catalog
+    /// + demo users (admin@moveli.ge/Admin123!, user@moveli.ge/User123!) are seeded ONLY when
+    /// <paramref name="seedDemoData"/> is true (development). In production, an admin is created
+    /// only from <paramref name="adminEmail"/>/<paramref name="adminPassword"/> (e.g. the
+    /// Seed:AdminEmail / Seed:AdminPassword env vars); if those are absent, no admin is created —
+    /// no known-password account is ever provisioned in production.
+    /// </summary>
+    public static async Task SeedAsync(
+        MoveliDbContext context,
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole<Guid>> roleManager,
+        bool seedDemoData,
+        string? adminEmail = null,
+        string? adminPassword = null)
     {
         // Serialize seeding across instances: if two app instances boot together (load-balanced
         // deploy) the loser waits on the advisory lock, then sees populated tables and skips —
@@ -18,29 +32,29 @@ public static class MoveliDbContextSeed
             await context.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock(548273)");
 
         await SeedRolesAsync(roleManager);
-        await SeedUsersAsync(userManager);
+        await SeedUsersAsync(userManager, seedDemoData, adminEmail, adminPassword);
 
-        if (!context.Categories.Any())
+        if (seedDemoData)
         {
-            var categories = GetCategories();
-            context.Categories.AddRange(categories);
-            await context.SaveChangesAsync();
-        }
+            if (!context.Categories.Any())
+            {
+                context.Categories.AddRange(GetCategories());
+                await context.SaveChangesAsync();
+            }
 
-        if (!context.Brands.Any())
-        {
-            var brands = GetBrands();
-            context.Brands.AddRange(brands);
-            await context.SaveChangesAsync();
-        }
+            if (!context.Brands.Any())
+            {
+                context.Brands.AddRange(GetBrands());
+                await context.SaveChangesAsync();
+            }
 
-        if (!context.Products.Any())
-        {
-            var categories = context.Categories.ToList();
-            var brands = context.Brands.ToList();
-            var products = GetProducts(categories, brands);
-            context.Products.AddRange(products);
-            await context.SaveChangesAsync();
+            if (!context.Products.Any())
+            {
+                var categories = context.Categories.ToList();
+                var brands = context.Brands.ToList();
+                context.Products.AddRange(GetProducts(categories, brands));
+                await context.SaveChangesAsync();
+            }
         }
 
         // Seed the singleton settings row so SettingsRepository.GetAsync never races to create it.
@@ -63,37 +77,42 @@ public static class MoveliDbContextSeed
         }
     }
 
-    private static async Task SeedUsersAsync(UserManager<ApplicationUser> userManager)
+    private static async Task SeedUsersAsync(
+        UserManager<ApplicationUser> userManager, bool seedDemoData, string? adminEmail, string? adminPassword)
     {
-        if (await userManager.FindByEmailAsync("admin@moveli.ge") == null)
+        if (seedDemoData)
         {
-            var admin = new ApplicationUser
-            {
-                UserName = "admin@moveli.ge",
-                Email = "admin@moveli.ge",
-                FirstName = "ადმინი",
-                LastName = "მოველი",
-                PreferredLanguage = "ka",
-                EmailConfirmed = true
-            };
-            await userManager.CreateAsync(admin, "Admin123!");
-            await userManager.AddToRoleAsync(admin, "Admin");
+            // Development convenience accounts with known passwords — never created in production.
+            await EnsureUserAsync(userManager, "admin@moveli.ge", "Admin123!", "ადმინი", "მოველი", "Admin");
+            await EnsureUserAsync(userManager, "user@moveli.ge", "User123!", "გიორგი", "ბერიძე", "Customer");
+            return;
         }
 
-        if (await userManager.FindByEmailAsync("user@moveli.ge") == null)
+        // Production: only provision an admin if credentials were supplied via configuration.
+        // If absent, no admin is seeded — the operator creates one out of band.
+        if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
+            await EnsureUserAsync(userManager, adminEmail, adminPassword, "Admin", "", "Admin");
+    }
+
+    private static async Task EnsureUserAsync(
+        UserManager<ApplicationUser> userManager,
+        string email, string password, string firstName, string lastName, string role)
+    {
+        if (await userManager.FindByEmailAsync(email) != null)
+            return;
+
+        var user = new ApplicationUser
         {
-            var user = new ApplicationUser
-            {
-                UserName = "user@moveli.ge",
-                Email = "user@moveli.ge",
-                FirstName = "გიორგი",
-                LastName = "ბერიძე",
-                PreferredLanguage = "ka",
-                EmailConfirmed = true
-            };
-            await userManager.CreateAsync(user, "User123!");
-            await userManager.AddToRoleAsync(user, "Customer");
-        }
+            UserName = email,
+            Email = email,
+            FirstName = firstName,
+            LastName = lastName,
+            PreferredLanguage = "ka",
+            EmailConfirmed = true
+        };
+        var result = await userManager.CreateAsync(user, password);
+        if (result.Succeeded)
+            await userManager.AddToRoleAsync(user, role);
     }
 
     private static List<Category> GetCategories()

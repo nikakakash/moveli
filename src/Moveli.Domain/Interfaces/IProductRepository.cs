@@ -22,7 +22,10 @@ public interface IProductRepository
 
     Task<Product?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
     Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<Product>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
     Task<List<Product>> GetFeaturedAsync(int count = 10, CancellationToken cancellationToken = default);
+    /// <summary>Atomically increments stock for each (productId, quantity) — used to restock a cancelled order.</summary>
+    Task RestockAsync(IEnumerable<(Guid ProductId, int Quantity)> items, CancellationToken cancellationToken = default);
     Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default);
     Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
     Task DeleteAsync(Product product, CancellationToken cancellationToken = default);

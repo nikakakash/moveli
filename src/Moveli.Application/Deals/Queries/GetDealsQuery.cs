@@ -2,6 +2,7 @@ using MediatR;
 using Moveli.Application.Common;
 using Moveli.Application.Deals.DTOs;
 using Moveli.Application.Discounts;
+using Moveli.Application.Products;
 using Moveli.Application.Products.DTOs;
 using Moveli.Domain.Entities;
 using Moveli.Domain.Enums;
@@ -54,25 +55,47 @@ public class GetDealsQueryHandler : IRequestHandler<GetDealsQuery, Result<List<D
 
         var snapshot = await _discountService.CreateSnapshotAsync(cancellationToken);
 
+        // Batch-resolve each scope's targets up front (one query per scope present) instead of
+        // one round-trip per deal.
+        var productIds = deals.Where(d => d.Scope == DiscountScope.Product).Select(d => d.TargetId).Distinct().ToList();
+        var categoryIds = deals.Where(d => d.Scope == DiscountScope.Category).Select(d => d.TargetId).Distinct().ToList();
+        var brandIds = deals.Where(d => d.Scope == DiscountScope.Brand).Select(d => d.TargetId).Distinct().ToList();
+
+        var products = productIds.Count > 0
+            ? (await _productRepository.GetByIdsAsync(productIds, cancellationToken)).ToDictionary(p => p.Id)
+            : new Dictionary<Guid, Product>();
+        var categories = categoryIds.Count > 0
+            ? (await _categoryRepository.GetByIdsAsync(categoryIds, cancellationToken)).ToDictionary(c => c.Id)
+            : new Dictionary<Guid, Category>();
+        var brands = brandIds.Count > 0
+            ? (await _brandRepository.GetByIdsAsync(brandIds, cancellationToken)).ToDictionary(b => b.Id)
+            : new Dictionary<Guid, Brand>();
+
         var dtos = new List<DealDto>(deals.Count);
         foreach (var d in deals)
         {
             string targetName;
+            string? targetSlug = null;
             ProductListDto? product = null;
 
             switch (d.Scope)
             {
                 case DiscountScope.Product:
-                    var p = await _productRepository.GetByIdAsync(d.TargetId, cancellationToken);
+                    products.TryGetValue(d.TargetId, out var p);
                     targetName = p?.Name.En ?? "(deleted)";
+                    targetSlug = p?.Slug;
                     if (p is { IsActive: true })
-                        product = MapProduct(p, snapshot);
+                        product = p.ToListDto(snapshot);
                     break;
                 case DiscountScope.Category:
-                    targetName = (await _categoryRepository.GetByIdAsync(d.TargetId, cancellationToken))?.Name.En ?? "(deleted)";
+                    var hasCat = categories.TryGetValue(d.TargetId, out var c);
+                    targetName = hasCat ? c!.Name.En : "(deleted)";
+                    targetSlug = c?.Slug;
                     break;
                 case DiscountScope.Brand:
-                    targetName = (await _brandRepository.GetByIdAsync(d.TargetId, cancellationToken))?.Name ?? "(deleted)";
+                    var hasBrand = brands.TryGetValue(d.TargetId, out var b);
+                    targetName = hasBrand ? b!.Name : "(deleted)";
+                    targetSlug = b?.Slug;
                     break;
                 default:
                     targetName = "(deleted)";
@@ -80,7 +103,7 @@ public class GetDealsQueryHandler : IRequestHandler<GetDealsQuery, Result<List<D
             }
 
             dtos.Add(new DealDto(
-                d.Id, d.Scope.ToString(), d.TargetId, targetName, d.Percentage,
+                d.Id, d.Scope.ToString(), d.TargetId, targetName, targetSlug, d.Percentage,
                 d.Title.Ka, d.Title.En, d.ImageUrl, d.Placement.ToString(),
                 d.ShowOnHome, d.ShowCountdown, d.StartsAt, d.EndsAt, product));
         }
@@ -88,13 +111,4 @@ public class GetDealsQueryHandler : IRequestHandler<GetDealsQuery, Result<List<D
         return Result<List<DealDto>>.Success(dtos);
     }
 
-    private static ProductListDto MapProduct(Product p, DiscountSnapshot snapshot)
-    {
-        var (price, compareAtPrice) = snapshot.Apply(p);
-        return new ProductListDto(
-            p.Id, p.Name.Ka, p.Name.En, p.Slug, price, compareAtPrice,
-            p.Images.FirstOrDefault(i => i.IsMain)?.Url ?? p.Images.FirstOrDefault()?.Url,
-            p.Category.Name.Ka, p.Category.Name.En, p.Brand.Name,
-            p.IsActive, p.IsFeatured, p.Rating, p.ReviewCount, p.StockQuantity);
-    }
 }

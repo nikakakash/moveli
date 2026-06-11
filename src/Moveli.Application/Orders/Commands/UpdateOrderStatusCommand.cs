@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Moveli.Application.Common;
 using Moveli.Domain.Entities;
 using Moveli.Domain.Enums;
@@ -12,13 +13,25 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
 {
     private readonly IOrderRepository _orderRepository;
     private readonly INotificationRepository _notificationRepository;
+    private readonly IProductRepository _productRepository;
+    private readonly IUserLookup _userLookup;
+    private readonly IEmailService _emailService;
+    private readonly ILogger<UpdateOrderStatusCommandHandler> _logger;
 
     public UpdateOrderStatusCommandHandler(
         IOrderRepository orderRepository,
-        INotificationRepository notificationRepository)
+        INotificationRepository notificationRepository,
+        IProductRepository productRepository,
+        IUserLookup userLookup,
+        IEmailService emailService,
+        ILogger<UpdateOrderStatusCommandHandler> logger)
     {
         _orderRepository = orderRepository;
         _notificationRepository = notificationRepository;
+        _productRepository = productRepository;
+        _userLookup = userLookup;
+        _emailService = emailService;
+        _logger = logger;
     }
 
     public async Task<Result> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
@@ -31,21 +44,47 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             return Result.Failure($"Cannot transition from {order.Status} to {request.NewStatus}.");
 
         var previousStatus = order.Status;
+
+        // Cancelling an order that wasn't already cancelled: return its items to stock and, if it
+        // had been paid, mark the payment refunded (COD orders were never charged, so leave as-is).
+        if (request.NewStatus == OrderStatus.Cancelled && previousStatus != OrderStatus.Cancelled)
+        {
+            await _productRepository.RestockAsync(
+                order.Items.Select(i => (i.ProductId, i.Quantity)), cancellationToken);
+            if (order.PaymentStatus == PaymentStatus.Paid)
+                order.PaymentStatus = PaymentStatus.Refunded;
+        }
+
         order.Status = request.NewStatus;
         await _orderRepository.UpdateAsync(order, cancellationToken);
 
-        // Notify the customer about the status change
+        // Notify the customer about the status change (in-app + best-effort email).
         var message = GetStatusChangeMessage(order.OrderNumber, request.NewStatus);
-        var notification = new Notification
+        await _notificationRepository.CreateAsync(new Notification
         {
             UserId = order.UserId,
             Message = message,
             OrderId = order.Id.ToString(),
             IsRead = false
-        };
-        await _notificationRepository.CreateAsync(notification, cancellationToken);
+        }, cancellationToken);
+
+        await TrySendStatusEmailAsync(order.UserId, message, cancellationToken);
 
         return Result.Success();
+    }
+
+    private async Task TrySendStatusEmailAsync(Guid userId, string message, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var email = await _userLookup.GetEmailAsync(userId, cancellationToken);
+            if (!string.IsNullOrEmpty(email))
+                await _emailService.SendAsync(email, "Moveli order update", $"<p>{message}</p>", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send order status email to user {UserId}", userId);
+        }
     }
 
     private static string GetStatusChangeMessage(string orderNumber, OrderStatus newStatus)

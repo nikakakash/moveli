@@ -9,7 +9,14 @@ public class CreatePromoCodeCommandValidatorTests
     private readonly CreatePromoCodeCommandValidator _validator = new();
 
     private static CreatePromoCodeCommand Valid() =>
-        new("SAVE10", "Percentage", 10, true, null, null);
+        new("SAVE10", "Percentage", 10, true, null, null, null);
+
+    [Fact]
+    public void Fails_WhenMaxRedemptionsNotPositive()
+    {
+        _validator.TestValidate(Valid() with { MaxRedemptions = 0 })
+            .ShouldHaveValidationErrorFor(x => x.MaxRedemptions);
+    }
 
     [Fact]
     public void Passes_ForValidCommand()
@@ -83,7 +90,7 @@ public class UpdatePromoCodeCommandValidatorTests
     private readonly UpdatePromoCodeCommandValidator _validator = new();
 
     private static UpdatePromoCodeCommand Valid() =>
-        new(Guid.NewGuid(), "SAVE10", "Percentage", 10, true, null, null);
+        new(Guid.NewGuid(), "SAVE10", "Percentage", 10, true, null, null, null);
 
     [Fact]
     public void Passes_ForValidCommand()

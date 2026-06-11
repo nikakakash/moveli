@@ -30,12 +30,15 @@ public class GetAdminOrdersQueryHandler : IRequestHandler<GetAdminOrdersQuery, R
             request.Status, request.DateFrom, request.DateTo,
             request.Search, cancellationToken);
 
+        var itemCounts = await _orderRepository.GetItemCountsAsync(
+            items.Select(o => o.Id).ToList(), cancellationToken);
+
         var dtos = items.Select(o => new OrderListDto(
             o.Id, o.OrderNumber, o.Status,
             o.ShippingAddress.FullName, o.ShippingAddress.PhoneNumber, o.ShippingAddress.City,
             o.ShippingAddress.Street, o.ShippingAddress.PostalCode,
             o.Total, o.CurrencyCode,
-            o.Items.Count, o.CreatedAt)).ToList();
+            itemCounts.GetValueOrDefault(o.Id), o.CreatedAt)).ToList();
 
         return Result<PagedResult<OrderListDto>>.Success(
             new PagedResult<OrderListDto>(dtos, totalCount, request.Page, request.PageSize));

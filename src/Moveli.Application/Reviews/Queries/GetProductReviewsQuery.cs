@@ -18,13 +18,16 @@ public class GetProductReviewsQueryHandler : IRequestHandler<GetProductReviewsQu
 
     public async Task<Result<PagedResult<ReviewDto>>> Handle(GetProductReviewsQuery request, CancellationToken cancellationToken)
     {
+        var page = Math.Max(1, request.Page);
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
         var (items, totalCount) = await _reviewRepository.GetByProductIdAsync(
-            request.ProductId, request.Page, request.PageSize, cancellationToken);
+            request.ProductId, page, pageSize, cancellationToken);
 
         var dtos = items.Select(r => new ReviewDto(
             r.Id, r.ProductId, r.UserId, r.Rating, r.Comment, r.IsApproved, r.CreatedAt)).ToList();
 
         return Result<PagedResult<ReviewDto>>.Success(
-            new PagedResult<ReviewDto>(dtos, totalCount, request.Page, request.PageSize));
+            new PagedResult<ReviewDto>(dtos, totalCount, page, pageSize));
     }
 }

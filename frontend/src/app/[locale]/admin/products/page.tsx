@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import {
   createProduct,
@@ -53,6 +53,7 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
@@ -64,7 +65,9 @@ export default function AdminProductsPage() {
   const [categories, setCategories] = useState<CategoryTreeDto[]>([]);
   const [brands, setBrands] = useState<BrandDto[]>([]);
 
+  const requestRef = useRef(0);
   const fetchProducts = useCallback(async () => {
+    const reqId = ++requestRef.current;
     setLoading(true);
     try {
       const query = new URLSearchParams();
@@ -74,11 +77,12 @@ export default function AdminProductsPage() {
       const result = await apiFetch<PagedResult<ProductListDto>>(
         `/products?${query.toString()}`
       );
+      if (reqId !== requestRef.current) return; // a newer request superseded this one
       setData(result);
     } catch {
-      toast.error("Failed to load products");
+      if (reqId === requestRef.current) toast.error("Failed to load products");
     } finally {
-      setLoading(false);
+      if (reqId === requestRef.current) setLoading(false);
     }
   }, [page, pageSize, search]);
 
@@ -94,6 +98,15 @@ export default function AdminProductsPage() {
       // silent
     }
   }, []);
+
+  // Debounce the search box so we fetch once the user pauses, not on every keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
 
   useEffect(() => {
     fetchProducts();
@@ -498,7 +511,7 @@ export default function AdminProductsPage() {
               </label>
               <div className="flex flex-wrap gap-3 mb-3">
                 {form.imageUrls.map((url, idx) => (
-                  <div key={idx} className="relative group">
+                  <div key={url} className="relative group">
                     <img
                       src={url}
                       alt=""
@@ -560,11 +573,8 @@ export default function AdminProductsPage() {
         <input
           type="text"
           placeholder={t("search")}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-moveli-purple-400 w-64"
         />
       </div>

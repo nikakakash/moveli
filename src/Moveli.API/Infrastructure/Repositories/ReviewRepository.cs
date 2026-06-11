@@ -19,6 +19,7 @@ public class ReviewRepository : IReviewRepository
         Guid productId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Reviews
+            .AsNoTracking()
             .Where(r => r.ProductId == productId && r.IsApproved)
             .OrderByDescending(r => r.CreatedAt);
 
@@ -54,6 +55,7 @@ public class ReviewRepository : IReviewRepository
         int page, int pageSize, bool? isApproved, CancellationToken cancellationToken = default)
     {
         var query = _context.Reviews
+            .AsNoTracking()
             .Include(r => r.Product)
             .AsQueryable();
 

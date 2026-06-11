@@ -63,13 +63,11 @@ public class AddCartItemCommandHandler : IRequestHandler<AddCartItemCommand, Res
 
         async Task<Result> MergeIntoExistingAsync(CartItem existing)
         {
-            var merged = existing.Quantity + request.Quantity;
-            if (product.StockQuantity < merged)
-                return Result.Failure("Not enough stock available.");
-            existing.Quantity = merged;
-            existing.UnitPrice = effectivePrice;
-            await _cartRepository.UpdateItemAsync(existing, cancellationToken);
-            return Result.Success();
+            // Atomic increment guarded on stock — two concurrent adds for the same item can't
+            // lose an update or push quantity past available stock.
+            var applied = await _cartRepository.TryIncrementItemQuantityAsync(
+                existing.Id, request.Quantity, product.StockQuantity, effectivePrice, cancellationToken);
+            return applied ? Result.Success() : Result.Failure("Not enough stock available.");
         }
 
         var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == request.ProductId);

@@ -17,7 +17,8 @@ public record UpdateCategoryCommand(
     Guid? ParentCategoryId,
     string? ImageUrl,
     int SortOrder,
-    bool IsActive) : IRequest<Result>;
+    bool IsActive,
+    bool IsComingSoon) : IRequest<Result>;
 
 public class UpdateCategoryCommandValidator : AbstractValidator<UpdateCategoryCommand>
 {
@@ -64,6 +65,7 @@ public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryComman
         category.ImageUrl = request.ImageUrl;
         category.SortOrder = request.SortOrder;
         category.IsActive = request.IsActive;
+        category.IsComingSoon = request.IsComingSoon;
 
         await _categoryRepository.UpdateAsync(category, cancellationToken);
         _cache.Remove(CacheKeys.CategoryTree);

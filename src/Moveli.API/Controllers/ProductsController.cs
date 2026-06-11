@@ -27,9 +27,7 @@ public class ProductsController : ControllerBase
         [FromQuery] string? search = null,
         [FromQuery] string? sortBy = null)
     {
-        page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 50);
-
+        // Paging bounds are enforced once, in the handler (the trust boundary for all callers).
         var result = await _mediator.Send(new GetProductsQuery(
             page, pageSize, categoryId, brandId, minPrice, maxPrice, minRating, search, sortBy));
 
@@ -60,7 +58,6 @@ public class ProductsController : ControllerBase
     [HttpGet("featured")]
     public async Task<IActionResult> GetFeaturedProducts([FromQuery] int count = 10)
     {
-        count = Math.Clamp(count, 1, 50);
         var result = await _mediator.Send(new GetFeaturedProductsQuery(count));
         return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }

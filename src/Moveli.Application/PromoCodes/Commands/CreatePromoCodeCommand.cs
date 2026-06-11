@@ -13,7 +13,8 @@ public record CreatePromoCodeCommand(
     decimal Value,
     bool IsActive,
     DateTime? StartsAt,
-    DateTime? EndsAt) : IRequest<Result<Guid>>;
+    DateTime? EndsAt,
+    int? MaxRedemptions) : IRequest<Result<Guid>>;
 
 public class CreatePromoCodeCommandValidator : AbstractValidator<CreatePromoCodeCommand>
 {
@@ -32,6 +33,10 @@ public class CreatePromoCodeCommandValidator : AbstractValidator<CreatePromoCode
             .GreaterThanOrEqualTo(x => x.StartsAt!.Value)
             .When(x => x.StartsAt.HasValue && x.EndsAt.HasValue)
             .WithMessage("End date must be on or after start date.");
+        RuleFor(x => x.MaxRedemptions)
+            .GreaterThan(0)
+            .When(x => x.MaxRedemptions.HasValue)
+            .WithMessage("Max redemptions must be greater than 0.");
     }
 }
 
@@ -59,7 +64,8 @@ public class CreatePromoCodeCommandHandler : IRequestHandler<CreatePromoCodeComm
             Value = request.Value,
             IsActive = request.IsActive,
             StartsAt = request.StartsAt?.ToUniversalTime(),
-            EndsAt = request.EndsAt?.ToUniversalTime()
+            EndsAt = request.EndsAt?.ToUniversalTime(),
+            MaxRedemptions = request.MaxRedemptions
         };
 
         await _repository.AddAsync(promo, cancellationToken);

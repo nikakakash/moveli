@@ -7,6 +7,7 @@ public record DealDto(
     string Scope,
     Guid TargetId,
     string TargetName,
+    string? TargetSlug,
     decimal Percentage,
     string TitleKa,
     string TitleEn,

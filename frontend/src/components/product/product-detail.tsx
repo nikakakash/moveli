@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Star,
-  Heart,
   ShoppingCart,
   Truck,
   ArrowCounterClockwise,
@@ -83,7 +82,7 @@ export function ProductDetail({ product, reviews }: Props) {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [allReviews, setAllReviews] = useState<ReviewDto[]>(reviews);
 
-  const images = product.images.sort((a, b) => a.sortOrder - b.sortOrder);
+  const images = [...product.images].sort((a, b) => a.sortOrder - b.sortOrder);
   const currentImage = resolveProductImage(product.slug, images[selectedImage]?.url);
 
   const hasDiscount =
@@ -288,10 +287,6 @@ export function ProductDetail({ product, reviews }: Props) {
             >
               <ShoppingCart size={20} />
               {isAdding ? "..." : t("addToCart")}
-            </button>
-
-            <button className="w-12 h-12 flex items-center justify-center border border-gray-200 rounded-lg hover:border-red-300 hover:text-red-500 transition">
-              <Heart size={20} />
             </button>
           </div>
 

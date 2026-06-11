@@ -53,19 +53,17 @@ export function CategoryGrid({
         const imageSrc = cat.imageUrl ?? (photoId ? unsplashSrc(photoId) : null);
         const hasImage = imageSrc && !failedImages.has(imageSrc);
 
-        return (
-          <Link
-            key={cat.id}
-            href={`/categories/${cat.slug}`}
-            className="group relative w-[150px] flex-shrink-0 snap-start aspect-square rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow"
-          >
+        const tileContent = (
+          <>
             {hasImage ? (
               <Image
                 src={imageSrc}
                 alt={name}
                 fill
                 sizes="150px"
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className={`object-cover transition-transform duration-300 ${
+                  cat.isComingSoon ? "grayscale" : "group-hover:scale-105"
+                }`}
                 onError={() => setFailedImages((s) => new Set(s).add(imageSrc))}
               />
             ) : (
@@ -76,9 +74,36 @@ export function CategoryGrid({
 
             {/* Scrim keeps the label readable over any photo. */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+            {cat.isComingSoon && (
+              <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/90 text-xs font-semibold text-gray-700">
+                {locale === "ka" ? "მალე" : "Coming soon"}
+              </span>
+            )}
             <span className="absolute inset-x-0 bottom-0 p-3 text-sm font-semibold text-white drop-shadow">
               {name}
             </span>
+          </>
+        );
+
+        const tileClass =
+          "group relative w-[150px] flex-shrink-0 snap-start aspect-square rounded-xl overflow-hidden border border-gray-100";
+
+        // Coming-soon categories are visible but not navigable.
+        if (cat.isComingSoon) {
+          return (
+            <div key={cat.id} className={`${tileClass} cursor-default opacity-80`}>
+              {tileContent}
+            </div>
+          );
+        }
+
+        return (
+          <Link
+            key={cat.id}
+            href={`/categories/${cat.slug}`}
+            className={`${tileClass} hover:shadow-lg transition-shadow`}
+          >
+            {tileContent}
           </Link>
         );
       })}

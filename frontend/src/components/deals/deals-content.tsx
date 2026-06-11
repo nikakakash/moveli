@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -45,6 +45,7 @@ export function DealsContent({
     (d) =>
       d.scope === "Category" &&
       d.imageUrl &&
+      d.targetSlug &&
       (d.placement === "Featured" || d.placement === "DealsPage")
   );
 
@@ -63,11 +64,13 @@ export function DealsContent({
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [minPct, setMinPct] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const requestRef = useRef(0);
 
   const applyFilter = async (nextCategoryId: string | null, nextMinPct: number | null) => {
     setCategoryId(nextCategoryId);
     setMinPct(nextMinPct);
     setLoading(true);
+    const reqId = ++requestRef.current;
     try {
       const res = await getDealProducts({
         page: 1,
@@ -75,11 +78,12 @@ export function DealsContent({
         categoryId: nextCategoryId ?? undefined,
         minPercentage: nextMinPct ?? undefined,
       });
+      if (reqId !== requestRef.current) return; // a newer filter superseded this one
       setItems(res.items);
       setPage(res.page);
       setTotalPages(res.totalPages);
     } finally {
-      setLoading(false);
+      if (reqId === requestRef.current) setLoading(false);
     }
   };
 
@@ -233,7 +237,7 @@ export function DealsContent({
           {banners.map((d) => (
             <Link
               key={d.id}
-              href={`/categories/${d.targetId}`}
+              href={`/categories/${d.targetSlug}`}
               className="relative h-40 rounded-2xl overflow-hidden flex flex-col justify-center p-6 text-white"
             >
               {d.imageUrl && (

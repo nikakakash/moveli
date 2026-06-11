@@ -1,7 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moveli.API.Infrastructure.Data;
 using Moveli.Application.Common;
+using Moveli.Application.Discounts;
+using Moveli.Application.Orders;
 using Moveli.Application.Orders.Commands;
 using Moveli.Application.Orders.DTOs;
 using Moveli.Application.PromoCodes;
@@ -14,17 +17,41 @@ namespace Moveli.API.Infrastructure.Orders;
 
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Result<OrderDto>>
 {
+    // NOTE(nika): minimum order and the regional (non-free-shipping-city) flat rate are not yet
+    // admin-configurable; the free-shipping threshold, in-city cost, and city come from StoreSettings.
+    private const decimal MinOrderTotal = 30m;
+    private const decimal RegionalShippingCost = 14m;
+
     private readonly IOrderRepository _orderRepository;
     private readonly ICartRepository _cartRepository;
     private readonly MoveliDbContext _context;
     private readonly IPromoCodeService _promoCodeService;
+    private readonly ISettingsRepository _settingsRepository;
+    private readonly IDiscountService _discountService;
+    private readonly IUserLookup _userLookup;
+    private readonly IEmailService _emailService;
+    private readonly ILogger<CreateOrderCommandHandler> _logger;
 
-    public CreateOrderCommandHandler(IOrderRepository orderRepository, ICartRepository cartRepository, MoveliDbContext context, IPromoCodeService promoCodeService)
+    public CreateOrderCommandHandler(
+        IOrderRepository orderRepository,
+        ICartRepository cartRepository,
+        MoveliDbContext context,
+        IPromoCodeService promoCodeService,
+        ISettingsRepository settingsRepository,
+        IDiscountService discountService,
+        IUserLookup userLookup,
+        IEmailService emailService,
+        ILogger<CreateOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
         _cartRepository = cartRepository;
         _context = context;
         _promoCodeService = promoCodeService;
+        _settingsRepository = settingsRepository;
+        _discountService = discountService;
+        _userLookup = userLookup;
+        _emailService = emailService;
+        _logger = logger;
     }
 
     public async Task<Result<OrderDto>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -66,6 +93,11 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 Notes = request.Notes
             };
 
+            // Re-price every line against the current product price + live discounts at checkout.
+            // The cart's stored UnitPrice is a display snapshot from add-to-cart time and must not
+            // be trusted to charge (carts persist for weeks; flash discounts expire).
+            var discounts = await _discountService.CreateSnapshotAsync(cancellationToken);
+
             foreach (var cartItem in cart.Items)
             {
                 // Atomic conditional decrement: the WHERE guard makes overselling impossible
@@ -82,28 +114,32 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     return Result<OrderDto>.Failure(
                         $"'{cartItem.Product.Name.En}' is unavailable or out of stock.");
 
+                var (unitPrice, _) = discounts.Apply(cartItem.Product);
+
                 order.Items.Add(new OrderItem
                 {
                     ProductId = cartItem.ProductId,
                     ProductName = cartItem.Product.Name.En,
                     Quantity = cartItem.Quantity,
-                    UnitPrice = cartItem.UnitPrice,
-                    Total = cartItem.UnitPrice * cartItem.Quantity
+                    UnitPrice = unitPrice,
+                    Total = unitPrice * cartItem.Quantity
                 });
             }
 
             order.SubTotal = order.Items.Sum(i => i.Total);
 
             // Minimum order validation
-            if (order.SubTotal < 30)
-                return Result<OrderDto>.Failure("Minimum order amount is ₾30.");
+            if (order.SubTotal < MinOrderTotal)
+                return Result<OrderDto>.Failure($"Minimum order amount is ₾{MinOrderTotal:0}.");
 
-            // Shipping cost calculation
-            bool isTbilisi = string.Equals(request.ShippingCity, "თბილისი", StringComparison.OrdinalIgnoreCase);
-            if (isTbilisi)
-                order.ShippingCost = order.SubTotal >= 100 ? 0 : 5;
-            else
-                order.ShippingCost = 14;
+            // Shipping: admin-configured free-shipping city gets free delivery above the
+            // threshold (flat in-city cost below it); all other regions pay the flat regional rate.
+            var settings = await _settingsRepository.GetAsync(cancellationToken);
+            var isFreeShippingCity = string.Equals(
+                request.ShippingCity?.Trim(), settings.FreeShippingCity?.Trim(), StringComparison.OrdinalIgnoreCase);
+            order.ShippingCost = isFreeShippingCity
+                ? (order.SubTotal >= settings.FreeShippingThreshold ? 0m : settings.ShippingCost)
+                : RegionalShippingCost;
 
             order.Discount = 0m;
             PromoValidationResult? appliedPromo = null;
@@ -143,11 +179,29 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     await transaction.RollbackAsync(cancellationToken);
                     return Result<OrderDto>.Failure("This promo code has already been used.");
                 }
+
+                // Enforce the global redemption cap atomically. The conditional UPDATE takes a row
+                // lock on the PromoCode row, so concurrent checkouts serialize here and re-evaluate
+                // the live redemption count (including the row each just inserted) against the cap.
+                if (appliedPromo.MaxRedemptions is int cap)
+                {
+                    var withinCap = await _context.PromoCodes
+                        .Where(p => p.Id == appliedPromo.PromoCodeId
+                            && _context.PromoCodeRedemptions.Count(r => r.PromoCodeId == p.Id) <= cap)
+                        .ExecuteUpdateAsync(s => s.SetProperty(p => p.UpdatedAt, DateTime.UtcNow), cancellationToken);
+                    if (withinCap == 0)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<OrderDto>.Failure("This promo code is no longer available.");
+                    }
+                }
             }
 
             await transaction.CommitAsync(cancellationToken);
 
-            return Result<OrderDto>.Success(MapToDto(order));
+            await TrySendConfirmationAsync(order, request.UserId, cancellationToken);
+
+            return Result<OrderDto>.Success(order.ToDto());
         }
         catch
         {
@@ -156,24 +210,28 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         }
     }
 
-    private static OrderDto MapToDto(Order order) => new(
-        order.Id,
-        order.OrderNumber,
-        order.Status,
-        order.ShippingAddress.FullName,
-        order.ShippingAddress.PhoneNumber,
-        order.ShippingAddress.City,
-        order.ShippingAddress.Street,
-        order.ShippingAddress.PostalCode,
-        order.PaymentMethod,
-        order.PaymentStatus,
-        order.Items.Select(i => new OrderItemDto(i.Id, i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.Total)).ToList(),
-        order.SubTotal,
-        order.ShippingCost,
-        order.Discount,
-        order.PromoCode,
-        order.Total,
-        order.CurrencyCode,
-        order.Notes,
-        order.CreatedAt);
+    // Best-effort order confirmation email — never fails the (already committed) order.
+    private async Task TrySendConfirmationAsync(Order order, Guid userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var email = await _userLookup.GetEmailAsync(userId, cancellationToken);
+            if (string.IsNullOrEmpty(email)) return;
+
+            var lines = string.Join("", order.Items.Select(i =>
+                $"<li>{i.ProductName} × {i.Quantity} — {i.Total:0.00} ₾</li>"));
+            var body = $"""
+                <p>Thank you for your order <strong>{order.OrderNumber}</strong>.</p>
+                <ul>{lines}</ul>
+                <p>Subtotal: {order.SubTotal:0.00} ₾<br/>Shipping: {order.ShippingCost:0.00} ₾<br/>
+                Discount: {order.Discount:0.00} ₾<br/><strong>Total: {order.Total:0.00} ₾</strong></p>
+                <p>Payment: cash on delivery. We'll notify you as your order progresses.</p>
+                """;
+            await _emailService.SendAsync(email, $"Order {order.OrderNumber} confirmed", body, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send order confirmation email for {OrderNumber}", order.OrderNumber);
+        }
+    }
 }

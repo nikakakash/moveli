@@ -1,6 +1,6 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { StaticPageLayout } from "@/components/static/static-page-layout";
-import { Truck, Package, MapPin } from "@phosphor-icons/react/dist/ssr";
+import { Truck, Package } from "@phosphor-icons/react/dist/ssr";
 
 export default async function ShippingPolicyPage() {
   const t = await getTranslations("pages");
@@ -17,10 +17,9 @@ export default async function ShippingPolicyPage() {
 function ShippingEn() {
   return (
     <>
-      <div className="grid sm:grid-cols-3 gap-4 not-prose">
+      <div className="grid sm:grid-cols-2 gap-4 not-prose">
         <Card icon={Truck} title="Tbilisi" line1="Free over ₾100" line2="₾5 under ₾100" line3="1–2 business days" />
         <Card icon={Package} title="Regions" line1="₾15 via Georgian Post" line2="All regions covered" line3="2–5 business days" />
-        <Card icon={MapPin} title="Pick up" line1="Free" line2="From our warehouse" line3="Same day if ordered by 14:00" />
       </div>
 
       <Section title="Delivery in Tbilisi">
@@ -78,10 +77,9 @@ function ShippingEn() {
 function ShippingKa() {
   return (
     <>
-      <div className="grid sm:grid-cols-3 gap-4 not-prose">
+      <div className="grid sm:grid-cols-2 gap-4 not-prose">
         <Card icon={Truck} title="თბილისი" line1="უფასო ₾100-დან" line2="₾5 ₾100-ზე ქვემოთ" line3="1–2 სამუშაო დღე" />
         <Card icon={Package} title="რეგიონები" line1="₾15 ფოსტით" line2="ყველა რეგიონი" line3="2–5 სამუშაო დღე" />
-        <Card icon={MapPin} title="თვითგატანა" line1="უფასო" line2="ჩვენი საწყობიდან" line3="იმავე დღეს 14:00-მდე" />
       </div>
 
       <Section title="მიწოდება თბილისში">

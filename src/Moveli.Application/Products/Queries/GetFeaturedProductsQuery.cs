@@ -30,35 +30,20 @@ public class GetFeaturedProductsQueryHandler : IRequestHandler<GetFeaturedProduc
 
     public async Task<Result<List<ProductListDto>>> Handle(GetFeaturedProductsQuery request, CancellationToken cancellationToken)
     {
-        var dtos = await _cache.GetOrCreateAsync(CacheKeys.FeaturedProducts(request.Count), async entry =>
+        // Clamp the client-supplied count so it can't load a huge result set or spray the
+        // cache with many distinct count-keyed entries.
+        var count = Math.Clamp(request.Count, 1, 50);
+
+        var dtos = await _cache.GetOrCreateAsync(CacheKeys.FeaturedProducts(count), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheKeys.FeaturedProductsTtl;
             // Lets product/discount mutations evict every count-keyed featured entry at once.
             entry.AddExpirationToken(_invalidator.GetChangeToken(CacheInvalidatorScopes.FeaturedProducts));
 
-            var products = await _productRepository.GetFeaturedAsync(request.Count, cancellationToken);
+            var products = await _productRepository.GetFeaturedAsync(count, cancellationToken);
             var discounts = await _discountService.CreateSnapshotAsync(cancellationToken);
 
-            return products.Select(p =>
-            {
-                var (price, compareAtPrice) = discounts.Apply(p);
-                return new ProductListDto(
-                    p.Id,
-                    p.Name.Ka,
-                    p.Name.En,
-                    p.Slug,
-                    price,
-                    compareAtPrice,
-                    p.Images.FirstOrDefault(i => i.IsMain)?.Url ?? p.Images.FirstOrDefault()?.Url,
-                    p.Category.Name.Ka,
-                    p.Category.Name.En,
-                    p.Brand.Name,
-                    p.IsActive,
-                    p.IsFeatured,
-                    p.Rating,
-                    p.ReviewCount,
-                    p.StockQuantity);
-            }).ToList();
+            return products.Select(p => p.ToListDto(discounts)).ToList();
         });
 
         return Result<List<ProductListDto>>.Success(dtos!);

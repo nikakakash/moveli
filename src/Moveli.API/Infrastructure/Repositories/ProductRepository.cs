@@ -25,6 +25,7 @@ public class ProductRepository : IProductRepository
     {
         var query = ApplyFilters(
             _context.Products
+                .AsNoTracking()
                 .Include(p => p.Category)
                 .Include(p => p.Brand)
                 .Include(p => p.Images)
@@ -66,7 +67,7 @@ public class ProductRepository : IProductRepository
         buckets = Math.Clamp(buckets, 1, 32);
 
         var query = ApplyFilters(
-            _context.Products.Where(p => p.IsActive),
+            _context.Products.AsNoTracking().Where(p => p.IsActive),
             categoryId, brandId, minRating, search);
 
         // Fetch only the price column and bucket in memory: keeps the math identical across
@@ -124,6 +125,7 @@ public class ProductRepository : IProductRepository
     public async Task<Product?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         return await _context.Products
+            .AsNoTracking()
             .Include(p => p.Category)
             .Include(p => p.Brand)
             .Include(p => p.Images)
@@ -139,9 +141,22 @@ public class ProductRepository : IProductRepository
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
+    public async Task<List<Product>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0) return [];
+        return await _context.Products
+            .AsNoTracking()
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
+            .Include(p => p.Images)
+            .Where(p => ids.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<List<Product>> GetFeaturedAsync(int count = 10, CancellationToken cancellationToken = default)
     {
         return await _context.Products
+            .AsNoTracking()
             .Include(p => p.Category)
             .Include(p => p.Brand)
             .Include(p => p.Images)
@@ -149,6 +164,17 @@ public class ProductRepository : IProductRepository
             .OrderByDescending(p => p.Rating)
             .Take(count)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task RestockAsync(IEnumerable<(Guid ProductId, int Quantity)> items, CancellationToken cancellationToken = default)
+    {
+        foreach (var (productId, quantity) in items)
+        {
+            if (quantity <= 0) continue;
+            await _context.Products
+                .Where(p => p.Id == productId)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.StockQuantity, p => p.StockQuantity + quantity), cancellationToken);
+        }
     }
 
     public async Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default)
