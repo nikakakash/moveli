@@ -28,4 +28,6 @@ COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
+# Bind all interfaces so the reverse proxy on the docker network can reach it.
+ENV HOSTNAME=0.0.0.0
 CMD ["node", "server.js"]

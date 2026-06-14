@@ -155,6 +155,18 @@
   background-clip: text;
   color: transparent;
 }
+/* Home hero backdrop (soft purple → cyan wash) */
+.bg-moveli-hero {
+  background: linear-gradient(115deg, #F0EBFE 0%, #E6F4FB 60%, #DAF0FA 100%);
+}
+/* Auth brand panel (saturated purple → cyan) */
+.bg-moveli-auth {
+  background: linear-gradient(135deg, #C9C0F3 0%, #B5C9EF 35%, #A8DCEC 75%, #8FD7E9 100%);
+}
+/* Soft radial glow behind the hero image cluster */
+.bg-moveli-hero-glow {
+  background: radial-gradient(circle, rgba(157, 142, 229, 0.18), rgba(125, 206, 234, 0.05) 70%);
+}
 
 /* Floating cards (auth onboarding) */
 @keyframes moveli-float {

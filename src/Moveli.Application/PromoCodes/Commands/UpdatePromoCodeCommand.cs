@@ -18,6 +18,8 @@ public record UpdatePromoCodeCommand(
 
 public class UpdatePromoCodeCommandValidator : AbstractValidator<UpdatePromoCodeCommand>
 {
+    private const decimal MaxFixedAmount = 100_000m;
+
     public UpdatePromoCodeCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
@@ -30,6 +32,10 @@ public class UpdatePromoCodeCommandValidator : AbstractValidator<UpdatePromoCode
             .LessThanOrEqualTo(100)
             .When(x => Enum.TryParse<PromoDiscountType>(x.Type, true, out var t) && t == PromoDiscountType.Percentage)
             .WithMessage("Percentage value must be between 0 and 100.");
+        RuleFor(x => x.Value)
+            .LessThanOrEqualTo(MaxFixedAmount)
+            .When(x => Enum.TryParse<PromoDiscountType>(x.Type, true, out var t) && t == PromoDiscountType.FixedAmount)
+            .WithMessage($"Fixed amount must not exceed ₾{MaxFixedAmount:0}.");
         RuleFor(x => x.EndsAt)
             .GreaterThanOrEqualTo(x => x.StartsAt!.Value)
             .When(x => x.StartsAt.HasValue && x.EndsAt.HasValue)

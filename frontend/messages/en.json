@@ -45,7 +45,8 @@
     "supportDesc": "Anytime you need",
     "freeDeliveryTag": "Free shipping*",
     "fastDeliveryTag": "Fast delivery",
-    "returnDaysTag": "Day returns"
+    "returnDaysTag": "Day returns",
+    "heroImageAlt": "Featured products available on MOVELI"
   },
   "product": {
     "prevPage": "Previous page",
@@ -173,7 +174,9 @@
     "updatePassword": "Update password",
     "resetSuccess": "Your password has been updated. You can now sign in.",
     "resetInvalidLink": "This reset link is invalid or has expired.",
-    "backToLogin": "Back to sign in"
+    "backToLogin": "Back to sign in",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "account": {
     "myOrders": "My orders",
@@ -212,7 +215,11 @@
     "addressCreated": "Address added",
     "addressSaveError": "Failed to save address",
     "addressConfirmDelete": "Delete this address?",
-    "addressDeleted": "Address deleted"
+    "addressDeleted": "Address deleted",
+    "noOrders": "No orders yet",
+    "emptyWishlist": "Your wishlist is empty",
+    "ordersLoadError": "Failed to load orders",
+    "wishlistLoadError": "Failed to load wishlist"
   },
   "common": {
     "currency": "₾",

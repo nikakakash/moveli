@@ -25,13 +25,7 @@ export function HeroSection({ primaryImageUrl, secondaryImageUrl }: Props) {
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
-      <div
-        className="rounded-2xl overflow-hidden relative p-6 sm:p-8 md:p-10 lg:p-14 grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6 items-center min-h-[320px] sm:min-h-[380px] lg:min-h-[440px]"
-        style={{
-          background:
-            "linear-gradient(115deg, #F0EBFE 0%, #E6F4FB 60%, #DAF0FA 100%)",
-        }}
-      >
+      <div className="bg-moveli-hero rounded-2xl overflow-hidden relative p-6 sm:p-8 md:p-10 lg:p-14 grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6 items-center min-h-[320px] sm:min-h-[380px] lg:min-h-[440px]">
         {/* Copy column */}
         <div className="relative z-10 max-w-xl">
           <span className="inline-flex items-center gap-1.5 bg-moveli-purple-50 text-moveli-purple-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-3 sm:mb-4">
@@ -85,19 +79,13 @@ export function HeroSection({ primaryImageUrl, secondaryImageUrl }: Props) {
             Hidden on mobile because two overlapping photos can't fit beside the headline. */}
         <div className="relative hidden md:block h-[300px] lg:h-[420px]">
           {/* Soft radial glow behind the photos. */}
-          <div
-            className="absolute -right-10 -top-5 w-[260px] lg:w-[360px] h-[260px] lg:h-[360px] rounded-full pointer-events-none blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(157,142,229,0.18), rgba(125,206,234,0.05) 70%)",
-            }}
-          />
+          <div className="bg-moveli-hero-glow absolute -right-10 -top-5 w-[260px] lg:w-[360px] h-[260px] lg:h-[360px] rounded-full pointer-events-none blur-3xl" />
 
           {/* Primary photo. Sizes scale: 200px on md, 280px on lg. */}
           <div className="absolute right-2 lg:right-6 top-0 w-[200px] lg:w-[280px] h-[200px] lg:h-[280px] rounded-2xl overflow-hidden shadow-2xl -rotate-6">
             <Image
               src={primary}
-              alt=""
+              alt={t("heroImageAlt")}
               width={560}
               height={560}
               className="w-full h-full object-cover"

@@ -145,7 +145,8 @@
       "Bash(grep -iv \"CacheInvalidator\\\\|HealthCheck\\\\|//\")",
       "Bash(cd /c/Users/Nika/Desktop/MOveli/frontend/src && find . -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) | head -200)",
       "Bash(xargs ls)",
-      "Bash(xargs cat)"
+      "Bash(xargs cat)",
+      "Bash(Sort-Object FullName)"
     ]
   },
   "enabledPlugins": {

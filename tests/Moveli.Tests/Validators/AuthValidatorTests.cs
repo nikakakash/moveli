@@ -29,11 +29,19 @@ public class RegisterCommandValidatorTests
 
     [Theory]
     [InlineData("")]
-    [InlineData("12345")] // < 6 chars
+    [InlineData("12345")]   // < 8 chars
+    [InlineData("1234567")] // 7 chars, still below the 8-char minimum
     public void Fails_ForWeakPassword(string password)
     {
         _validator.TestValidate(Valid() with { Password = password })
             .ShouldHaveValidationErrorFor(x => x.Password);
+    }
+
+    [Fact]
+    public void Passes_ForEightCharPassword()
+    {
+        _validator.TestValidate(Valid() with { Password = "12345678" })
+            .ShouldNotHaveValidationErrorFor(x => x.Password);
     }
 
     [Fact]
@@ -60,5 +68,28 @@ public class RegisterCommandValidatorTests
     {
         _validator.TestValidate(Valid() with { PhoneNumber = phone })
             .ShouldHaveValidationErrorFor(x => x.PhoneNumber);
+    }
+}
+
+public class ResetPasswordCommandValidatorTests
+{
+    private readonly ResetPasswordCommandValidator _validator = new();
+
+    private static ResetPasswordCommand Valid() =>
+        new("user@moveli.ge", "reset-token", "secret123");
+
+    [Fact]
+    public void Passes_ForValidCommand()
+    {
+        _validator.TestValidate(Valid()).ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("1234567")] // 7 chars, below the 8-char minimum
+    public void Fails_ForWeakNewPassword(string password)
+    {
+        _validator.TestValidate(Valid() with { NewPassword = password })
+            .ShouldHaveValidationErrorFor(x => x.NewPassword);
     }
 }

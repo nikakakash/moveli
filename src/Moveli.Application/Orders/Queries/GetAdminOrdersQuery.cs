@@ -25,8 +25,11 @@ public class GetAdminOrdersQueryHandler : IRequestHandler<GetAdminOrdersQuery, R
 
     public async Task<Result<PagedResult<OrderListDto>>> Handle(GetAdminOrdersQuery request, CancellationToken cancellationToken)
     {
+        var page = Math.Max(1, request.Page);
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
         var (items, totalCount) = await _orderRepository.GetAllAsync(
-            request.Page, request.PageSize,
+            page, pageSize,
             request.Status, request.DateFrom, request.DateTo,
             request.Search, cancellationToken);
 
@@ -41,6 +44,6 @@ public class GetAdminOrdersQueryHandler : IRequestHandler<GetAdminOrdersQuery, R
             itemCounts.GetValueOrDefault(o.Id), o.CreatedAt)).ToList();
 
         return Result<PagedResult<OrderListDto>>.Success(
-            new PagedResult<OrderListDto>(dtos, totalCount, request.Page, request.PageSize));
+            new PagedResult<OrderListDto>(dtos, totalCount, page, pageSize));
     }
 }

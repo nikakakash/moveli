@@ -48,13 +48,7 @@ export function AuthForm({ mode }: Props) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left: Brand panel */}
-      <div
-        className="hidden lg:flex flex-col justify-between p-12 relative overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(135deg, #C9C0F3 0%, #B5C9EF 35%, #A8DCEC 75%, #8FD7E9 100%)",
-        }}
-      >
+      <div className="bg-moveli-auth hidden lg:flex flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-white/20 blur-xl" />
         <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-moveli-purple-400/25" />
 
@@ -133,10 +127,11 @@ export function AuthForm({ mode }: Props) {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
                       {t("firstName")}
                     </label>
                     <input
+                      id="firstName"
                       type="text"
                       required
                       value={firstName}
@@ -145,10 +140,11 @@ export function AuthForm({ mode }: Props) {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
                       {t("lastName")}
                     </label>
                     <input
+                      id="lastName"
                       type="text"
                       required
                       value={lastName}
@@ -158,10 +154,11 @@ export function AuthForm({ mode }: Props) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
                     {t("phone")}
                   </label>
                   <input
+                    id="phoneNumber"
                     type="tel"
                     required
                     maxLength={9}
@@ -175,10 +172,11 @@ export function AuthForm({ mode }: Props) {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 {t("email")}
               </label>
               <input
+                id="email"
                 type="email"
                 required
                 value={email}
@@ -188,13 +186,15 @@ export function AuthForm({ mode }: Props) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 {t("password")}
               </label>
               <div className="relative">
                 <input
+                  id="password"
                   type={showPassword ? "text" : "password"}
                   required
+                  minLength={mode === "register" ? 8 : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-moveli-purple-400 focus:ring-2 focus:ring-moveli-purple-100 pr-10"
@@ -202,6 +202,7 @@ export function AuthForm({ mode }: Props) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                 >
                   {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}

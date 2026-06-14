@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { getWishlist, removeFromWishlist } from "@/lib/api/wishlist";
 import { useAuthStore } from "@/stores/auth-store";
 import { ProductCard } from "@/components/product/product-card";
@@ -19,15 +20,21 @@ export function WishlistContent() {
     if (!isAuthenticated) return;
     getWishlist()
       .then(setItems)
-      .catch(() => {})
+      .catch((err) => {
+        console.error("Failed to load wishlist:", err);
+        toast.error(t("wishlistLoadError"));
+      })
       .finally(() => setIsLoading(false));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, t]);
 
   const handleRemove = async (productId: string) => {
     try {
       await removeFromWishlist(productId);
       setItems((prev) => prev.filter((i) => i.productId !== productId));
-    } catch {}
+    } catch (err) {
+      console.error("Failed to remove wishlist item:", err);
+      toast.error(t("wishlistLoadError"));
+    }
   };
 
   if (isLoading) {
@@ -50,7 +57,7 @@ export function WishlistContent() {
       {items.length === 0 ? (
         <div className="text-center py-16">
           <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">Your wishlist is empty</p>
+          <p className="text-gray-500">{t("emptyWishlist")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

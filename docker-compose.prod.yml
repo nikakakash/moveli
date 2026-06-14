@@ -1,5 +1,11 @@
-# Production-style stack. All secrets come from the environment (or a sibling .env file that is
-# NOT committed). This is host-agnostic; a managed host may instead provide Postgres/Redis.
+# Production stack. All secrets come from the environment (or a sibling .env file that is NOT
+# committed — see deploy/.env.prod.example). Host-agnostic: a managed host may instead provide
+# Postgres/Redis and its own TLS, in which case drop those services / the caddy service.
+#
+# Each app service carries both `image:` and `build:`. `docker compose build` (or `up --build`)
+# builds locally and tags it as `image:`; CD instead runs `docker compose pull` to fetch the same
+# tag from GHCR. The API and frontend are NOT published to the host — only Caddy is — so the API
+# cannot be reached except through the proxy (keeps ForwardedHeaders__TrustAllProxies safe).
 services:
   postgres:
     image: postgres:16
@@ -10,21 +16,34 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moveli} -d ${POSTGRES_DB:-moveli}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
+    image: ghcr.io/nikakakash/moveli-api:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: src/Moveli.API/Dockerfile
     restart: unless-stopped
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-moveli};Username=${POSTGRES_USER:-moveli};Password=${POSTGRES_PASSWORD}"
@@ -52,15 +71,16 @@ services:
       # Optional: provision the first admin (created only if both are set)
       Seed__AdminEmail: ${SEED_ADMIN_EMAIL:-}
       Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-}
-      # Trust the proxy in front of the API (set to the proxy network or true behind a private LB)
+      # The API is only reachable via Caddy on the internal network, so trusting the proxy is safe.
       ForwardedHeaders__TrustAllProxies: ${TRUST_ALL_PROXIES:-true}
     volumes:
       - dp_keys:/keys
       - uploads:/uploads
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
 
   frontend:
+    image: ghcr.io/nikakakash/moveli-frontend:${IMAGE_TAG:-latest}
     build:
       context: ./frontend
       args:
@@ -68,12 +88,33 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://moveli.ge}
     restart: unless-stopped
     depends_on:
+      api:
+        condition: service_healthy
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
       - api
+      - frontend
     ports:
-      - "3000:3000"
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-moveli.ge}
+      API_DOMAIN: ${API_DOMAIN:-api.moveli.ge}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL for Let's Encrypt}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
 volumes:
   postgres_data:
   redis_data:
   dp_keys:
   uploads:
+  caddy_data:
+  caddy_config:

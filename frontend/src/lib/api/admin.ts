@@ -1,5 +1,6 @@
 import { apiFetch } from "./client";
 import { getAccessToken } from "./client";
+import { API_BASE_URL } from "@/lib/config";
 import type {
   PagedResult,
   AdminCustomerDto,
@@ -341,12 +342,13 @@ export async function uploadImage(file: File): Promise<{ url: string }> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://localhost:5001/api";
+  // Image upload is an admin-only action; never send the request without credentials.
   const token = getAccessToken();
+  if (!token) throw new Error("Authentication required for image upload.");
 
   const res = await fetch(`${API_BASE_URL}/admin/upload/image`, {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: { Authorization: `Bearer ${token}` },
     body: formData,
     credentials: "include",
   });

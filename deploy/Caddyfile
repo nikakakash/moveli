@@ -1,0 +1,17 @@
+# Reverse proxy with automatic Let's Encrypt TLS. Domains + ACME email come from the environment
+# (set in .env.prod and passed through by docker-compose.prod.yml).
+{
+	email {$ACME_EMAIL}
+}
+
+# Storefront (Next.js)
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy frontend:3000
+}
+
+# API (.NET) — serves /api/*, /uploads/*, and /health
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy api:8080
+}

@@ -45,7 +45,8 @@
     "supportDesc": "ნებისმიერ დროს",
     "freeDeliveryTag": "უფასო მიწოდება*",
     "fastDeliveryTag": "სწრაფი მიწოდება",
-    "returnDaysTag": "დღიანი დაბრუნება"
+    "returnDaysTag": "დღიანი დაბრუნება",
+    "heroImageAlt": "MOVELI-ზე ხელმისაწვდომი რჩეული პროდუქტები"
   },
   "product": {
     "prevPage": "წინა გვერდი",
@@ -173,7 +174,9 @@
     "updatePassword": "პაროლის განახლება",
     "resetSuccess": "თქვენი პაროლი განახლდა. ახლა შეგიძლიათ შეხვიდეთ.",
     "resetInvalidLink": "აღდგენის ბმული არასწორია ან ვადაგასულია.",
-    "backToLogin": "შესვლაზე დაბრუნება"
+    "backToLogin": "შესვლაზე დაბრუნება",
+    "showPassword": "პაროლის ჩვენება",
+    "hidePassword": "პაროლის დამალვა"
   },
   "account": {
     "myOrders": "ჩემი შეკვეთები",
@@ -212,7 +215,11 @@
     "addressCreated": "მისამართი დაემატა",
     "addressSaveError": "მისამართის შენახვა ვერ მოხერხდა",
     "addressConfirmDelete": "წავშალო ეს მისამართი?",
-    "addressDeleted": "მისამართი წაიშალა"
+    "addressDeleted": "მისამართი წაიშალა",
+    "noOrders": "ჯერ შეკვეთები არ გაქვთ",
+    "emptyWishlist": "თქვენი სასურველთა სია ცარიელია",
+    "ordersLoadError": "შეკვეთების ჩატვირთვა ვერ მოხერხდა",
+    "wishlistLoadError": "სასურველთა სიის ჩატვირთვა ვერ მოხერხდა"
   },
   "common": {
     "currency": "₾",

@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://localhost:5001/api";
+import { API_BASE_URL } from "@/lib/config";
 
 // The access token is held in memory only. The refresh token lives in an HttpOnly cookie set
 // by the API and is never accessible to JavaScript, so it can't be exfiltrated via XSS.

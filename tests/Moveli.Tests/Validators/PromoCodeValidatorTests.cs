@@ -77,6 +77,20 @@ public class CreatePromoCodeCommandValidatorTests
     }
 
     [Fact]
+    public void Passes_WhenFixedValueAtCap()
+    {
+        _validator.TestValidate(Valid() with { Type = "FixedAmount", Value = 100_000 })
+            .ShouldNotHaveValidationErrorFor(x => x.Value);
+    }
+
+    [Fact]
+    public void Fails_WhenFixedValueAboveCap()
+    {
+        _validator.TestValidate(Valid() with { Type = "FixedAmount", Value = 100_001 })
+            .ShouldHaveValidationErrorFor(x => x.Value);
+    }
+
+    [Fact]
     public void Fails_WhenEndsBeforeStarts()
     {
         var now = DateTime.UtcNow;
@@ -109,6 +123,13 @@ public class UpdatePromoCodeCommandValidatorTests
     public void Fails_WhenPercentageValueAbove100()
     {
         _validator.TestValidate(Valid() with { Value = 150 })
+            .ShouldHaveValidationErrorFor(x => x.Value);
+    }
+
+    [Fact]
+    public void Fails_WhenFixedValueAboveCap()
+    {
+        _validator.TestValidate(Valid() with { Type = "FixedAmount", Value = 100_001 })
             .ShouldHaveValidationErrorFor(x => x.Value);
     }
 }

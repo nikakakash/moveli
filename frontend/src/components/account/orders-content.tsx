@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { getOrders } from "@/lib/api/orders";
 import { formatPrice } from "@/lib/format";
@@ -35,9 +36,12 @@ export function OrdersContent() {
     setIsLoading(true);
     getOrders(page, 10)
       .then(setData)
-      .catch(() => {})
+      .catch((err) => {
+        console.error("Failed to load orders:", err);
+        toast.error(t("ordersLoadError"));
+      })
       .finally(() => setIsLoading(false));
-  }, [isAuthenticated, page]);
+  }, [isAuthenticated, page, t]);
 
   const tabs: { key: FilterTab; label: string }[] = [
     { key: "all", label: t("all") },
@@ -91,7 +95,7 @@ export function OrdersContent() {
       {filtered.length === 0 ? (
         <div className="text-center py-16">
           <Package size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">No orders yet</p>
+          <p className="text-gray-500">{t("noOrders")}</p>
         </div>
       ) : (
         <div className="space-y-3">
