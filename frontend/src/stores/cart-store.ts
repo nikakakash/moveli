@@ -32,18 +32,35 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   addItem: async (productId, quantity = 1) => {
-    const cart = await cartApi.addCartItem(productId, quantity);
-    set({ items: cart.items, total: cart.total });
+    try {
+      const cart = await cartApi.addCartItem(productId, quantity);
+      set({ items: cart.items, total: cart.total });
+    } catch (err) {
+      // Re-sync from the authoritative backend so the UI can't keep a stale total after a
+      // rejected write, then rethrow so the caller can surface the error.
+      await get().fetchCart();
+      throw err;
+    }
   },
 
   updateQuantity: async (itemId, quantity) => {
-    const cart = await cartApi.updateCartItem(itemId, quantity);
-    set({ items: cart.items, total: cart.total });
+    try {
+      const cart = await cartApi.updateCartItem(itemId, quantity);
+      set({ items: cart.items, total: cart.total });
+    } catch (err) {
+      await get().fetchCart();
+      throw err;
+    }
   },
 
   removeItem: async (itemId) => {
-    const cart = await cartApi.removeCartItem(itemId);
-    set({ items: cart.items, total: cart.total });
+    try {
+      const cart = await cartApi.removeCartItem(itemId);
+      set({ items: cart.items, total: cart.total });
+    } catch (err) {
+      await get().fetchCart();
+      throw err;
+    }
   },
 
   clearLocal: () => {

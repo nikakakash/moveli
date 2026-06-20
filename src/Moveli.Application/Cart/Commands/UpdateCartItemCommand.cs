@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using Moveli.Application.Common;
+using Moveli.Application.Discounts;
 using Moveli.Domain.Interfaces;
 
 namespace Moveli.Application.Cart.Commands;
@@ -20,11 +21,16 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
 {
     private readonly ICartRepository _cartRepository;
     private readonly IProductRepository _productRepository;
+    private readonly IDiscountService _discountService;
 
-    public UpdateCartItemCommandHandler(ICartRepository cartRepository, IProductRepository productRepository)
+    public UpdateCartItemCommandHandler(
+        ICartRepository cartRepository,
+        IProductRepository productRepository,
+        IDiscountService discountService)
     {
         _cartRepository = cartRepository;
         _productRepository = productRepository;
+        _discountService = discountService;
     }
 
     public async Task<Result> Handle(UpdateCartItemCommand request, CancellationToken cancellationToken)
@@ -50,7 +56,14 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
         if (product.StockQuantity < request.Quantity)
             return Result.Failure("Not enough stock available.");
 
+        // Re-snapshot the discounted price so the cart total stays consistent with what
+        // checkout will charge — the stored UnitPrice can be stale if a discount started or
+        // expired since the item was added. Mirrors AddCartItemCommand.
+        var discounts = await _discountService.CreateSnapshotAsync(cancellationToken);
+        var (effectivePrice, _) = discounts.Apply(product);
+
         item.Quantity = request.Quantity;
+        item.UnitPrice = effectivePrice;
         await _cartRepository.UpdateItemAsync(item, cancellationToken);
         return Result.Success();
     }

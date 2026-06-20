@@ -1,35 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useCartStore } from "@/stores/cart-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { useSettingsStore } from "@/stores/settings-store";
 import { createOrder } from "@/lib/api/orders";
 import { getMyAddresses, createAddress } from "@/lib/api/addresses";
 import { validatePromoCode } from "@/lib/api/promo-codes";
 import { formatPrice } from "@/lib/format";
+import { GEORGIAN_CITIES } from "@/lib/cities";
 import { toast } from "sonner";
 import { Check, Truck, MapPin, Plus, Star, Tag, X } from "@phosphor-icons/react";
 import type { PaymentMethod, AddressDto } from "@/lib/api/types";
 
-const CITIES = [
-  "თბილისი",
-  "ბათუმი",
-  "ქუთაისი",
-  "რუსთავი",
-  "ზუგდიდი",
-  "გორი",
-  "თელავი",
-  "ფოთი",
-];
+const CITY_VALUES = GEORGIAN_CITIES.map((c) => c.value);
 
 export function CheckoutContent() {
   const t = useTranslations("checkout");
   const tCart = useTranslations("cart");
+  const locale = useLocale();
   const router = useRouter();
   const { items, total, clearLocal } = useCartStore();
   const { isAuthenticated } = useAuthStore();
+  const { settings, ensureLoaded } = useSettingsStore();
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,7 +41,7 @@ export function CheckoutContent() {
   // Address form
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [city, setCity] = useState(CITIES[0]);
+  const [city, setCity] = useState(CITY_VALUES[0]);
   const [street, setStreet] = useState("");
   const [postalCode, setPostalCode] = useState("");
 
@@ -68,11 +63,15 @@ export function CheckoutContent() {
   const useNewAddress = () => {
     setFullName("");
     setPhone("");
-    setCity(CITIES[0]);
+    setCity(CITY_VALUES[0]);
     setStreet("");
     setPostalCode("");
     setSelectedAddressId("new");
   };
+
+  useEffect(() => {
+    ensureLoaded();
+  }, [ensureLoaded]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -96,21 +95,40 @@ export function CheckoutContent() {
     };
   }, [isAuthenticated]);
 
+  // Addresses are still loading while no selection has been resolved yet (the fetch above
+  // sets an id or "new" on success/failure). Drives the saved-address skeleton.
+  const addressesLoading = selectedAddressId === null;
+
   // The city <select> only lists known cities; if a saved address uses a city
   // that isn't in the list, surface it as an extra option so it stays selected.
-  const cityOptions = CITIES.includes(city) ? CITIES : [city, ...CITIES];
+  const cityOptions = CITY_VALUES.includes(city)
+    ? GEORGIAN_CITIES
+    : [{ value: city, en: city }, ...GEORGIAN_CITIES];
 
   // Payment — cash-on-delivery only for v1 (no online card gateway yet).
   const paymentMethod: PaymentMethod = "CashOnDelivery";
   const [notes, setNotes] = useState("");
 
-  // Shipping cost calculation
-  const isTbilisi = city === "თბილისი";
-  const shippingCost = isTbilisi ? (total >= 100 ? 0 : 5) : 14;
+  // Shipping cost — derived from public store settings so it matches what the backend charges
+  // (which stays authoritative). Falls back to the previous literals until settings load.
+  const freeShippingCity = settings?.freeShippingCity ?? "თბილისი";
+  const freeShippingThreshold = settings?.freeShippingThreshold ?? 100;
+  const inCityShippingCost = settings?.shippingCost ?? 5;
+  const regionalShippingCost = settings?.regionalShippingCost ?? 14;
+  const minOrderTotal = settings?.minOrderTotal ?? 30;
 
-  // Promo discount (backend re-validates and is authoritative)
+  const isFreeShippingCity = city === freeShippingCity;
+  const shippingCost = isFreeShippingCity
+    ? total >= freeShippingThreshold
+      ? 0
+      : inCityShippingCost
+    : regionalShippingCost;
+
+  // Promo discount (backend re-validates and is authoritative). Clamp at 0 so a discount
+  // larger than the order can never render a negative payable total.
   const discount = appliedPromo?.discountAmount ?? 0;
-  const grandTotal = total + shippingCost - discount;
+  const grandTotal = Math.max(0, total + shippingCost - discount);
+  const belowMinimum = total < minOrderTotal;
 
   const handleApplyPromo = async () => {
     if (!promoInput.trim()) return;
@@ -121,6 +139,7 @@ export function CheckoutContent() {
         subtotal: total,
       });
       setAppliedPromo({ code: result.code, discountAmount: result.discountAmount });
+      setPromoInput("");
       toast.success(t("promoApplied", { code: result.code }));
     } catch (err) {
       const message = err instanceof Error ? err.message : t("promoInvalid");
@@ -251,6 +270,16 @@ export function CheckoutContent() {
         <div className="lg:col-span-2">
           {step === 1 && (
             <div className="space-y-4">
+              {addressesLoading && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" aria-hidden="true">
+                  {[0, 1].map((i) => (
+                    <div
+                      key={i}
+                      className="h-24 rounded-lg border border-gray-100 bg-gray-50 animate-pulse"
+                    />
+                  ))}
+                </div>
+              )}
               {savedAddresses.length > 0 && (
                 <div>
                   <h3 className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
@@ -339,8 +368,8 @@ export function CheckoutContent() {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white"
                 >
                   {cityOptions.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
+                    <option key={c.value} value={c.value}>
+                      {locale === "ka" ? c.value : c.en}
                     </option>
                   ))}
                 </select>
@@ -432,7 +461,8 @@ export function CheckoutContent() {
                 </button>
                 <button
                   onClick={handlePlaceOrder}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || belowMinimum}
+                  title={belowMinimum ? t("minimumOrderError") : undefined}
                   className="flex-1 bg-moveli-gradient text-white font-semibold py-3 rounded-lg shadow-lg shadow-moveli-purple-500/25 disabled:opacity-50"
                 >
                   {isSubmitting ? "..." : t("placeOrder")}
@@ -514,7 +544,7 @@ export function CheckoutContent() {
                     disabled={promoLoading || !promoInput.trim()}
                     className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
                   >
-                    {t("promoApply")}
+                    {promoLoading ? t("promoApplying") : t("promoApply")}
                   </button>
                 </div>
               )}

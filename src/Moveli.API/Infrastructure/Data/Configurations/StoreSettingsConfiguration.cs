@@ -16,6 +16,10 @@ public class StoreSettingsConfiguration : IEntityTypeConfiguration<StoreSettings
         builder.Property(s => s.FreeShippingCity).HasMaxLength(100);
         builder.Property(s => s.FreeShippingThreshold).HasPrecision(18, 2);
         builder.Property(s => s.ShippingCost).HasPrecision(18, 2);
+        // Defaults applied to the existing settings row when the columns are added, so an
+        // upgraded install keeps a sane regional rate / minimum instead of falling to zero.
+        builder.Property(s => s.RegionalShippingCost).HasPrecision(18, 2).HasDefaultValue(14m);
+        builder.Property(s => s.MinOrderTotal).HasPrecision(18, 2).HasDefaultValue(30m);
         builder.Property(s => s.AnnouncementEn).HasMaxLength(500);
         builder.Property(s => s.AnnouncementKa).HasMaxLength(500);
         builder.Property(s => s.HeroImagePrimaryUrl).HasMaxLength(500);

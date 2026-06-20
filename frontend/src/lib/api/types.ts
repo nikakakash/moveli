@@ -545,6 +545,11 @@ export interface PublicSettingsDto {
   heroImageSecondaryUrl: string | null;
   dealsHeroImagePrimaryUrl: string | null;
   dealsHeroImageSecondaryUrl: string | null;
+  freeShippingThreshold: number;
+  shippingCost: number;
+  regionalShippingCost: number;
+  freeShippingCity: string;
+  minOrderTotal: number;
 }
 
 export interface UpdateSettingsRequest {

@@ -10,9 +10,15 @@ public class StoreSettings : BaseEntity
     // Shipping
     public decimal FreeShippingThreshold { get; set; } = 100m;
     public decimal ShippingCost { get; set; } = 5m;
+    // Flat rate charged for every city other than FreeShippingCity.
+    public decimal RegionalShippingCost { get; set; } = 14m;
     // Must match the city string the storefront sends at checkout (the checkout city
     // dropdown uses Georgian names), otherwise the free-shipping rule never matches.
     public string FreeShippingCity { get; set; } = "თბილისი";
+
+    // Minimum subtotal required to place an order. Single-sourced here so the storefront
+    // and checkout enforce the same value (the cart/checkout read it from public settings).
+    public decimal MinOrderTotal { get; set; } = 30m;
 
     // Storefront toggles
     public bool MaintenanceMode { get; set; }

@@ -16,6 +16,8 @@ interface HeaderSearchProps {
 
 const RECENT_KEY = "moveli:recent-searches";
 const RECENT_LIMIT = 5;
+const LISTBOX_ID = "header-search-listbox";
+const OPTION_ID_PREFIX = "header-search-option-";
 // Brand/product terms read the same in both locales, so no translation needed.
 const TRENDING = ["iPhone", "AirPods", "PlayStation", "Samsung", "MacBook"];
 
@@ -168,6 +170,13 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => setOpen(true)}
+            role="combobox"
+            aria-expanded={open && showSuggestions}
+            aria-controls={LISTBOX_ID}
+            aria-autocomplete="list"
+            aria-activedescendant={
+              activeIndex >= 0 ? `${OPTION_ID_PREFIX}${activeIndex}` : undefined
+            }
             className="w-full pl-10 pr-9 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-moveli-purple-400 focus:ring-2 focus:ring-moveli-purple-100 transition"
           />
           {query && (
@@ -185,6 +194,14 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
         </div>
       </form>
 
+      <div aria-live="polite" role="status" className="sr-only">
+        {open && showSuggestions && !loading
+          ? suggestions.length === 0
+            ? t("noSuggestions")
+            : t("resultsAnnounce", { count: suggestions.length })
+          : ""}
+      </div>
+
       {open && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-50">
           {showSuggestions ? (
@@ -195,12 +212,12 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
                 {t("noSuggestions")}
               </div>
             ) : (
-              <>
+              <ul id={LISTBOX_ID} role="listbox" aria-label={t("search")}>
                 {suggestions.map((p, i) => {
                   const img = resolveProductImage(p.slug, p.mainImageUrl, 80);
                   return (
+                    <li key={p.id} role="option" aria-selected={activeIndex === i} id={`${OPTION_ID_PREFIX}${i}`}>
                     <button
-                      key={p.id}
                       type="button"
                       onClick={() => goToProduct(p.slug)}
                       onMouseEnter={() => setActiveIndex(i)}
@@ -221,8 +238,10 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
                         {formatPrice(p.price)}
                       </span>
                     </button>
+                    </li>
                   );
                 })}
+                <li>
                 <Link
                   href={`/products?search=${encodeURIComponent(term)}`}
                   onClick={() => {
@@ -234,7 +253,8 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
                 >
                   {t("viewAllResults")}
                 </Link>
-              </>
+                </li>
+              </ul>
             )
           ) : (
             <div className="py-2">

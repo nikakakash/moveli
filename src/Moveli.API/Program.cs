@@ -21,13 +21,21 @@ builder.Services.AddMoveliEmail(builder.Configuration);
 builder.Services.AddMoveliStorage(builder.Configuration);
 
 // CORS
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+if (allowedOrigins is null or { Length: 0 })
+{
+    // Fail fast in non-dev: AllowCredentials with an unintended origin set is a security risk,
+    // and silently falling back to localhost would also break a real deployment. Dev keeps the
+    // localhost default for convenience.
+    if (!builder.Environment.IsDevelopment())
+        throw new InvalidOperationException("Cors:AllowedOrigins must be configured outside Development.");
+    allowedOrigins = ["http://localhost:3000"];
+}
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(
-                builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                ?? ["http://localhost:3000"])
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
@@ -49,6 +57,19 @@ builder.Services.AddRateLimiter(options =>
         return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        });
+    });
+
+    // Promo-code validation — authenticated but a code-guessing oracle, so throttle it well
+    // below the global budget. Partitioned per client IP like the auth policy.
+    options.AddPolicy("promo", httpContext =>
+    {
+        var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0
         });

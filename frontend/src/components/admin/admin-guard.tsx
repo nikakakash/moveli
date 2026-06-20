@@ -1,9 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth-store";
 import { Link } from "@/i18n/navigation";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const { user, isAuthenticated, isLoading } = useAuthStore();
 
   if (isLoading) {
@@ -18,13 +21,13 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Access denied</h2>
-          <p className="text-gray-500 mb-6">You don&apos;t have permission to access this page.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">{t("accessDenied")}</h2>
+          <p className="text-gray-500 mb-6">{t("accessDeniedDesc")}</p>
           <Link
             href="/"
             className="inline-flex bg-moveli-gradient text-white font-semibold px-6 py-3 rounded-lg"
           >
-            Go home
+            {tCommon("goHome")}
           </Link>
         </div>
       </div>

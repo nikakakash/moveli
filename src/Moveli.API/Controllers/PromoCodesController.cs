@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Moveli.Application.Common;
 using Moveli.Application.PromoCodes.Queries;
 
@@ -9,6 +10,7 @@ namespace Moveli.API.Controllers;
 [ApiController]
 [Route("api/promo-codes")]
 [Authorize]
+[EnableRateLimiting("promo")]
 public class PromoCodesController : ControllerBase
 {
     private readonly IMediator _mediator;

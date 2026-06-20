@@ -223,6 +223,27 @@ public class CreateOrderCommandHandlerTests : IDisposable
         stock.Should().Be(15); // decrement rolled back
     }
 
+    [Fact]
+    public async Task Handle_WhenDiscountExceedsOrderTotal_FailsAndCreatesNoOrder()
+    {
+        SeedCatalog(stock: 15);
+        _cartRepository.Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CartSnapshot()); // subtotal = 2 × ₾100 = ₾200
+        // A promo whose discount dwarfs subtotal + shipping would drive Total negative.
+        _promoService.Setup(s => s.ValidateAsync("HUGE", It.IsAny<decimal>(), UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<PromoValidationResult>.Success(
+                new PromoValidationResult(PromoId, "HUGE", 9999m, MaxRedemptions: null)));
+
+        var result = await _sut.Handle(Command() with { PromoCode = "HUGE" }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("negative");
+        (await _context.Orders.AsNoTracking().CountAsync()).Should().Be(0);
+        var stock = await _context.Products.AsNoTracking().Where(p => p.Id == ProductId)
+            .Select(p => p.StockQuantity).SingleAsync();
+        stock.Should().Be(15); // decrement rolled back
+    }
+
     public void Dispose()
     {
         _context.Dispose();

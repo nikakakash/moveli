@@ -14,6 +14,7 @@
     "account": "Account",
     "logout": "Sign out",
     "noSuggestions": "No matching products",
+    "resultsAnnounce": "{count} suggestions available",
     "viewAllResults": "View all results",
     "recentSearches": "Recent searches",
     "trending": "Trending",
@@ -140,6 +141,7 @@
     "saveAddress": "Save this address for future orders",
     "promoPlaceholder": "Promo code",
     "promoApply": "Apply",
+    "promoApplying": "Applying…",
     "promoApplied": "{code} applied",
     "promoChip": "{code} applied · −₾{amount}",
     "promoDiscountLine": "Discount ({code})",
@@ -219,7 +221,8 @@
     "noOrders": "No orders yet",
     "emptyWishlist": "Your wishlist is empty",
     "ordersLoadError": "Failed to load orders",
-    "wishlistLoadError": "Failed to load wishlist"
+    "wishlistLoadError": "Failed to load wishlist",
+    "signOut": "Sign out"
   },
   "common": {
     "currency": "₾",
@@ -271,6 +274,8 @@
     "cancelled": "Cancelled"
   },
   "admin": {
+    "accessDenied": "Access denied",
+    "accessDeniedDesc": "You don't have permission to access this page.",
     "dashboard": "Dashboard",
     "products": "Products",
     "orders": "Orders",

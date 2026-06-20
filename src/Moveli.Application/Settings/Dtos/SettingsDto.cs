@@ -24,7 +24,12 @@ public record PublicSettingsDto(
     string? HeroImagePrimaryUrl,
     string? HeroImageSecondaryUrl,
     string? DealsHeroImagePrimaryUrl,
-    string? DealsHeroImageSecondaryUrl);
+    string? DealsHeroImageSecondaryUrl,
+    decimal FreeShippingThreshold,
+    decimal ShippingCost,
+    decimal RegionalShippingCost,
+    string FreeShippingCity,
+    decimal MinOrderTotal);
 
 public record UpdateSettingsRequest(
     string StoreName,

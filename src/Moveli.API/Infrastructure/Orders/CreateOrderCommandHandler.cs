@@ -17,11 +17,6 @@ namespace Moveli.API.Infrastructure.Orders;
 
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Result<OrderDto>>
 {
-    // NOTE(nika): minimum order and the regional (non-free-shipping-city) flat rate are not yet
-    // admin-configurable; the free-shipping threshold, in-city cost, and city come from StoreSettings.
-    private const decimal MinOrderTotal = 30m;
-    private const decimal RegionalShippingCost = 14m;
-
     private readonly IOrderRepository _orderRepository;
     private readonly ICartRepository _cartRepository;
     private readonly MoveliDbContext _context;
@@ -128,18 +123,19 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
             order.SubTotal = order.Items.Sum(i => i.Total);
 
+            var settings = await _settingsRepository.GetAsync(cancellationToken);
+
             // Minimum order validation
-            if (order.SubTotal < MinOrderTotal)
-                return Result<OrderDto>.Failure($"Minimum order amount is ₾{MinOrderTotal:0}.");
+            if (order.SubTotal < settings.MinOrderTotal)
+                return Result<OrderDto>.Failure($"Minimum order amount is ₾{settings.MinOrderTotal:0}.");
 
             // Shipping: admin-configured free-shipping city gets free delivery above the
             // threshold (flat in-city cost below it); all other regions pay the flat regional rate.
-            var settings = await _settingsRepository.GetAsync(cancellationToken);
             var isFreeShippingCity = string.Equals(
                 request.ShippingCity?.Trim(), settings.FreeShippingCity?.Trim(), StringComparison.OrdinalIgnoreCase);
             order.ShippingCost = isFreeShippingCity
                 ? (order.SubTotal >= settings.FreeShippingThreshold ? 0m : settings.ShippingCost)
-                : RegionalShippingCost;
+                : settings.RegionalShippingCost;
 
             order.Discount = 0m;
             PromoValidationResult? appliedPromo = null;
@@ -156,6 +152,11 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             }
 
             order.Total = order.SubTotal + order.ShippingCost - order.Discount;
+
+            // Invariant guard: the promo discount is capped at subtotal upstream, so this should
+            // never trip — but never persist (or charge) a negative total if that ever changes.
+            if (order.Total < 0)
+                return Result<OrderDto>.Failure("Order total cannot be negative.");
 
             _context.Orders.Add(order);
 

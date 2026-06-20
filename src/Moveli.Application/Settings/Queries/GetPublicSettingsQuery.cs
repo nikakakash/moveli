@@ -38,7 +38,9 @@ public class GetPublicSettingsQueryHandler : IRequestHandler<GetPublicSettingsQu
             return new PublicSettingsDto(
                 s.StoreName, s.MaintenanceMode, s.AnnouncementEn, s.AnnouncementKa,
                 s.HeroImagePrimaryUrl, s.HeroImageSecondaryUrl,
-                s.DealsHeroImagePrimaryUrl, s.DealsHeroImageSecondaryUrl);
+                s.DealsHeroImagePrimaryUrl, s.DealsHeroImageSecondaryUrl,
+                s.FreeShippingThreshold, s.ShippingCost, s.RegionalShippingCost,
+                s.FreeShippingCity, s.MinOrderTotal);
         });
 
         return Result<PublicSettingsDto>.Success(dto!);

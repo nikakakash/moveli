@@ -48,11 +48,27 @@ public class MoveliDbContext : IdentityDbContext<ApplicationUser, IdentityRole<G
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        StampTimestamps();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override int SaveChanges()
+    {
+        StampTimestamps();
+        return base.SaveChanges();
+    }
+
+    // Timestamps are authoritative at persistence time, not object-construction time, so a
+    // skewed app clock or a client-supplied value can't backdate a row.
+    private void StampTimestamps()
+    {
+        var now = DateTime.UtcNow;
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {
-            if (entry.State == EntityState.Modified)
-                entry.Entity.UpdatedAt = DateTime.UtcNow;
+            if (entry.State == EntityState.Added)
+                entry.Entity.CreatedAt = now;
+            else if (entry.State == EntityState.Modified)
+                entry.Entity.UpdatedAt = now;
         }
-        return base.SaveChangesAsync(cancellationToken);
     }
 }

@@ -14,6 +14,7 @@
     "account": "ანგარიში",
     "logout": "გასვლა",
     "noSuggestions": "პროდუქტი ვერ მოიძებნა",
+    "resultsAnnounce": "{count} შედეგი ნაპოვნია",
     "viewAllResults": "ყველა შედეგის ნახვა",
     "recentSearches": "ბოლო ძიებები",
     "trending": "პოპულარული",
@@ -140,6 +141,7 @@
     "saveAddress": "მისამართის შენახვა მომავალი შეკვეთებისთვის",
     "promoPlaceholder": "პრომო კოდი",
     "promoApply": "გამოყენება",
+    "promoApplying": "მიმდინარეობს…",
     "promoApplied": "{code} გააქტიურდა",
     "promoChip": "{code} გააქტიურდა · −₾{amount}",
     "promoDiscountLine": "ფასდაკლება ({code})",
@@ -219,7 +221,8 @@
     "noOrders": "ჯერ შეკვეთები არ გაქვთ",
     "emptyWishlist": "თქვენი სასურველთა სია ცარიელია",
     "ordersLoadError": "შეკვეთების ჩატვირთვა ვერ მოხერხდა",
-    "wishlistLoadError": "სასურველთა სიის ჩატვირთვა ვერ მოხერხდა"
+    "wishlistLoadError": "სასურველთა სიის ჩატვირთვა ვერ მოხერხდა",
+    "signOut": "გასვლა"
   },
   "common": {
     "currency": "₾",
@@ -271,6 +274,8 @@
     "cancelled": "გაუქმებული"
   },
   "admin": {
+    "accessDenied": "წვდომა აკრძალულია",
+    "accessDeniedDesc": "თქვენ არ გაქვთ ამ გვერდზე წვდომის უფლება.",
     "dashboard": "მთავარი პანელი",
     "products": "პროდუქტები",
     "orders": "შეკვეთები",

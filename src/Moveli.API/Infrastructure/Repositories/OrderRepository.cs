@@ -92,9 +92,15 @@ public class OrderRepository : IOrderRepository
 
     public async Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken = default)
     {
-        // Use raw SQL with PostgreSQL advisory lock to prevent race conditions
         var year = DateTime.UtcNow.ToString("yy");
         var prefix = $"MV-{year}";
+
+        // Serialize MAX(...)+1 generation across concurrent checkouts with a per-prefix
+        // transaction-scoped advisory lock. Callers run this inside the checkout transaction,
+        // so the lock is released on commit/rollback and two racing orders can't compute the
+        // same sequence number (which the unique index on OrderNumber would otherwise reject).
+        await _context.Database.ExecuteSqlRawAsync(
+            "SELECT pg_advisory_xact_lock(hashtext({0}))", [prefix], cancellationToken);
 
         var result = await _context.Database
             .SqlQueryRaw<int>(
