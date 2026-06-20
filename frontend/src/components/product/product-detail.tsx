@@ -98,7 +98,7 @@ export function ProductDetail({ product, reviews }: Props) {
         description: `${name} × ${quantity}`,
       });
     } catch {
-      toast.error("Failed to add to cart");
+      toast.error(tCart("addError"));
     } finally {
       setIsAdding(false);
     }
@@ -122,7 +122,7 @@ export function ProductDetail({ product, reviews }: Props) {
       setReviewComment("");
       toast.success(t("reviewSubmitted"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to submit review");
+      toast.error(err instanceof Error ? err.message : t("reviewError"));
     } finally {
       setIsSubmittingReview(false);
     }

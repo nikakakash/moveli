@@ -11,15 +11,24 @@ interface SettingsState {
 
 // Public store settings (shipping rules, minimum order) fetched once and shared so the cart
 // and checkout enforce the same values the backend charges — the backend stays authoritative.
+let inFlight: Promise<void> | null = null;
+
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: null,
 
   ensureLoaded: async () => {
     if (get().settings) return;
-    try {
-      set({ settings: await getPublicSettings() });
-    } catch {
-      // Leave null; consumers fall back to safe defaults.
-    }
+    // Dedupe concurrent callers (cart + checkout mounting together) onto one request.
+    inFlight ??= getPublicSettings()
+      .then((settings) => {
+        set({ settings });
+      })
+      .catch(() => {
+        // Leave null; consumers fall back to safe defaults.
+      })
+      .finally(() => {
+        inFlight = null;
+      });
+    return inFlight;
   },
 }));

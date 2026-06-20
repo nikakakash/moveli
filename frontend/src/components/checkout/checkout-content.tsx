@@ -163,7 +163,7 @@ export function CheckoutContent() {
           href="/login"
           className="inline-flex bg-moveli-gradient text-white font-semibold px-6 py-3 rounded-lg"
         >
-          Sign in to continue
+          {t("signInToContinue")}
         </Link>
       </div>
     );
@@ -185,7 +185,7 @@ export function CheckoutContent() {
           href="/account/orders"
           className="mt-6 inline-flex bg-moveli-gradient text-white font-semibold px-6 py-3 rounded-lg"
         >
-          View orders
+          {t("viewOrders")}
         </Link>
       </div>
     );
@@ -224,7 +224,7 @@ export function CheckoutContent() {
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Order failed");
+      toast.error(err instanceof Error ? err.message : t("orderError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -332,10 +332,11 @@ export function CheckoutContent() {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="checkout-full-name" className="block text-sm font-medium text-gray-700 mb-1">
                     {t("fullName")}
                   </label>
                   <input
+                    id="checkout-full-name"
                     type="text"
                     required
                     value={fullName}
@@ -344,10 +345,11 @@ export function CheckoutContent() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="checkout-phone" className="block text-sm font-medium text-gray-700 mb-1">
                     {t("phone")}
                   </label>
                   <input
+                    id="checkout-phone"
                     type="tel"
                     required
                     maxLength={9}
@@ -359,10 +361,11 @@ export function CheckoutContent() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="checkout-city" className="block text-sm font-medium text-gray-700 mb-1">
                   {t("city")}
                 </label>
                 <select
+                  id="checkout-city"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white"
@@ -375,10 +378,11 @@ export function CheckoutContent() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="checkout-street" className="block text-sm font-medium text-gray-700 mb-1">
                   {t("street")}
                 </label>
                 <input
+                  id="checkout-street"
                   type="text"
                   required
                   value={street}
@@ -387,10 +391,11 @@ export function CheckoutContent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="checkout-postal-code" className="block text-sm font-medium text-gray-700 mb-1">
                   {t("postalCode")}
                 </label>
                 <input
+                  id="checkout-postal-code"
                   type="text"
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
@@ -441,10 +446,11 @@ export function CheckoutContent() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="checkout-notes" className="block text-sm font-medium text-gray-700 mb-1">
                   {t("notes")}
                 </label>
                 <textarea
+                  id="checkout-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}

@@ -212,6 +212,7 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
                 {t("noSuggestions")}
               </div>
             ) : (
+              <>
               <ul id={LISTBOX_ID} role="listbox" aria-label={t("search")}>
                 {suggestions.map((p, i) => {
                   const img = resolveProductImage(p.slug, p.mainImageUrl, 80);
@@ -241,7 +242,7 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
                     </li>
                   );
                 })}
-                <li>
+                </ul>
                 <Link
                   href={`/products?search=${encodeURIComponent(term)}`}
                   onClick={() => {
@@ -253,8 +254,7 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
                 >
                   {t("viewAllResults")}
                 </Link>
-                </li>
-              </ul>
+              </>
             )
           ) : (
             <div className="py-2">

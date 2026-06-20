@@ -24,12 +24,11 @@ builder.Services.AddMoveliStorage(builder.Configuration);
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 if (allowedOrigins is null or { Length: 0 })
 {
-    // Fail fast in non-dev: AllowCredentials with an unintended origin set is a security risk,
-    // and silently falling back to localhost would also break a real deployment. Dev keeps the
-    // localhost default for convenience.
-    if (!builder.Environment.IsDevelopment())
-        throw new InvalidOperationException("Cors:AllowedOrigins must be configured outside Development.");
-    allowedOrigins = ["http://localhost:3000"];
+    // Dev gets the localhost default for convenience. Outside dev, deny all cross-origin
+    // (empty allow-list) rather than guessing an origin: a misconfigured deploy gets a safe,
+    // closed CORS policy instead of the wrong one — and the app still boots (health checks /
+    // same-origin / server-to-server are unaffected by CORS). Real deploys set Cors:AllowedOrigins.
+    allowedOrigins = builder.Environment.IsDevelopment() ? ["http://localhost:3000"] : [];
 }
 builder.Services.AddCors(options =>
 {

@@ -22,7 +22,7 @@ public class PromoCode : BaseEntity
     public decimal ComputeDiscount(decimal subtotal)
     {
         var discount = Type == PromoDiscountType.Percentage
-            ? Math.Round(subtotal * Value / 100m, 2)
+            ? Math.Round(subtotal * Value / 100m, 2, MidpointRounding.AwayFromZero)
             : Value;
         return Math.Min(discount, subtotal);
     }

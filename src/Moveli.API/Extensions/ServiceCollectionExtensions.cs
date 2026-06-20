@@ -68,7 +68,10 @@ public static class ServiceCollectionExtensions
                 ValidIssuer = configuration["Jwt:Issuer"],
                 ValidAudience = configuration["Jwt:Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!))
+                    Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!)),
+                // Tighten the default 5-minute grace so an expired access token isn't honored
+                // for minutes past its 30-minute lifetime.
+                ClockSkew = TimeSpan.FromMinutes(1)
             };
         });
 

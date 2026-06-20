@@ -84,6 +84,7 @@
     "reviewPlaceholder": "Share your experience with this product...",
     "submitReview": "Submit review",
     "reviewSubmitted": "Review submitted!",
+    "reviewError": "Failed to submit review",
     "loginToReview": "Sign in to leave a review",
     "noReviews": "No reviews yet. Be the first to review!",
     "deliveryToday": "Delivery today",
@@ -108,7 +109,8 @@
     "freeDeliveryInfo": "Free delivery in Tbilisi for orders over ₾100",
     "minimumOrder": "Minimum order is ₾30",
     "addMore": "Add ₾{amount} more to reach the minimum",
-    "deliveryTime": "Delivery within 24 hours"
+    "deliveryTime": "Delivery within 24 hours",
+    "addError": "Failed to add to cart"
   },
   "checkout": {
     "title": "Checkout",
@@ -131,6 +133,9 @@
     "placeOrder": "Place order",
     "orderConfirmed": "Order confirmed!",
     "orderNumber": "Order number",
+    "signInToContinue": "Sign in to continue",
+    "viewOrders": "View orders",
+    "orderError": "Order failed",
     "notes": "Notes",
     "shipping": "Shipping",
     "freeShipping": "Free",
