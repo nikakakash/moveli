@@ -65,8 +65,15 @@ public class CartRepository : ICartRepository
 
     public async Task UpdateItemAsync(CartItem item, CancellationToken cancellationToken = default)
     {
-        _context.Set<CartItem>().Update(item);
-        await _context.SaveChangesAsync(cancellationToken);
+        // Targeted column update by id rather than Update(item): the item comes from an
+        // AsNoTracking cart load and carries a Product navigation, so attaching the whole graph
+        // collides with the product the caller already tracked (stock/discount lookup). Updating
+        // only the scalar columns sidesteps tracking entirely.
+        await _context.Set<CartItem>()
+            .Where(i => i.Id == item.Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(i => i.Quantity, item.Quantity)
+                .SetProperty(i => i.UnitPrice, item.UnitPrice), cancellationToken);
     }
 
     public async Task<bool> TryIncrementItemQuantityAsync(Guid itemId, int delta, int maxStock, decimal unitPrice, CancellationToken cancellationToken = default)

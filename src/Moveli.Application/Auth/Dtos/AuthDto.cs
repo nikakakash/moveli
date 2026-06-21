@@ -8,7 +8,10 @@ public record RegisterRequest(string Email, string Password, string FirstName, s
 
 public record LoginRequest(string Email, string Password);
 
-public record RefreshTokenRequest(string RefreshToken);
+// RefreshToken is optional: browser clients send it via the HttpOnly cookie with an empty
+// JSON body, so a non-nullable (implicitly required) property would 400 before the controller's
+// cookie fallback runs. Only non-browser clients supply it in the body.
+public record RefreshTokenRequest(string? RefreshToken);
 
 public record ForgotPasswordRequest(string Email);
 
