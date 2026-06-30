@@ -67,6 +67,7 @@ export default function AdminOrdersPage() {
   }, [searchInput]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchOrders toggles its loading flag
     fetchOrders();
   }, [fetchOrders]);
 

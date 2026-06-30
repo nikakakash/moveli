@@ -13,7 +13,7 @@ import {
   List,
   X,
 } from "@phosphor-icons/react";
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { NotificationBell } from "./notification-bell";
 import { HeaderSearch } from "./header-search";
 
@@ -25,11 +25,13 @@ export function Header() {
   const cartCount = useCartStore((s) => s.itemCount());
   const { isAuthenticated, user } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // false on the server and first client render, true afterwards — gates client-only UI
+  // (the cart badge) without a setState-in-effect, so there is no hydration mismatch.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const switchLocale = () => {
     const next = locale === "ka" ? "en" : "ka";

@@ -32,6 +32,7 @@ export default function AdminBrandsPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchBrands toggles its loading flag
     fetchBrands();
   }, [fetchBrands]);
 

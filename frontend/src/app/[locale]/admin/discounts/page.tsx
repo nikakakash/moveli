@@ -131,9 +131,17 @@ export default function AdminDiscountsPage() {
   }, [locale]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; the fetchers toggle their loading flags
     fetchDiscounts();
     fetchTargets();
   }, [fetchDiscounts, fetchTargets]);
+
+  // Re-evaluate live status badges over time without reading the clock during render (purity).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const targetOptions =
     form.scope === "Product"
@@ -256,7 +264,6 @@ export default function AdminDiscountsPage() {
   };
 
   const statusOf = (d: DiscountDto) => {
-    const now = Date.now();
     if (!d.isActive) return { key: "statusOff", cls: "bg-gray-100 text-gray-500" };
     if (d.startsAt && new Date(d.startsAt).getTime() > now)
       return { key: "statusScheduled", cls: "bg-blue-100 text-blue-700" };

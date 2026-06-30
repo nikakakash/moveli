@@ -30,6 +30,7 @@ export function CountdownTimer({ endsAt, variant = "hero" }: Props) {
   const [left, setLeft] = useState<ReturnType<typeof diff>>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: seeds the countdown post-hydration to avoid an SSR mismatch (see note above)
     setLeft(diff(endsAt));
     const id = setInterval(() => setLeft(diff(endsAt)), 1000);
     return () => clearInterval(id);

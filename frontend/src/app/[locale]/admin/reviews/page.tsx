@@ -38,6 +38,7 @@ export default function AdminReviewsPage() {
   }, [filter, page, pageSize]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchReviews toggles its loading flag
     fetchReviews();
   }, [fetchReviews]);
 

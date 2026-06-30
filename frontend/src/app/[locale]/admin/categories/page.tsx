@@ -44,6 +44,7 @@ export default function AdminCategoriesPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchCategories toggles its loading flag
     fetchCategories();
   }, [fetchCategories]);
 

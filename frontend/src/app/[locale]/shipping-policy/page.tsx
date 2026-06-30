@@ -42,7 +42,7 @@ function ShippingEn() {
           Delivery typically takes 2–5 business days depending on the destination.
         </p>
         <p>
-          Tracking is available through Georgian Post's website once your parcel is dispatched.
+          Tracking is available through Georgian Post&apos;s website once your parcel is dispatched.
           You will receive tracking details via SMS and email.
         </p>
       </Section>
@@ -66,7 +66,7 @@ function ShippingEn() {
 
       <Section title="Order tracking">
         <p>
-          Track your order anytime from the "My Orders" section of your account. Each order
+          Track your order anytime from the &quot;My Orders&quot; section of your account. Each order
           shows real-time status updates: Confirmed → Processing → Shipped → Delivered.
         </p>
       </Section>
@@ -127,7 +127,7 @@ function ShippingKa() {
 
       <Section title="შეკვეთის თრექინგი">
         <p>
-          თვალი ადევნეთ შეკვეთას ნებისმიერ დროს „ჩემი შეკვეთები" განყოფილებიდან.
+          თვალი ადევნეთ შეკვეთას ნებისმიერ დროს „ჩემი შეკვეთები&quot; განყოფილებიდან.
           თითოეული შეკვეთა აჩვენებს რეალურ დროში სტატუსის განახლებებს:
           დადასტურებული → მუშავდება → გაგზავნილი → მიწოდებული.
         </p>

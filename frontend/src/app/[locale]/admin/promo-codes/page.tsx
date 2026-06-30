@@ -66,8 +66,16 @@ export default function AdminPromoCodesPage() {
   }, [page, pageSize]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchCodes toggles its loading flag
     fetchCodes();
   }, [fetchCodes]);
+
+  // Re-evaluate live status badges over time without reading the clock during render (purity).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -125,7 +133,6 @@ export default function AdminPromoCodesPage() {
   };
 
   const statusOf = (c: PromoCodeDto) => {
-    const now = Date.now();
     if (!c.isActive)
       return { key: "promoCodeStatusOff", cls: "bg-gray-100 text-gray-500" };
     if (c.endsAt && new Date(c.endsAt).getTime() < now)

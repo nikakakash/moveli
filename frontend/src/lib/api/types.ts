@@ -307,7 +307,7 @@ export interface CreateProductRequest {
   imageUrls: string[];
 }
 
-export interface UpdateProductRequest extends CreateProductRequest {}
+export type UpdateProductRequest = CreateProductRequest;
 
 // Admin Category Management
 export interface CreateCategoryRequest {
@@ -323,7 +323,7 @@ export interface CreateCategoryRequest {
   isComingSoon: boolean;
 }
 
-export interface UpdateCategoryRequest extends CreateCategoryRequest {}
+export type UpdateCategoryRequest = CreateCategoryRequest;
 
 // Admin Brand Management
 export interface CreateBrandRequest {
@@ -333,7 +333,7 @@ export interface CreateBrandRequest {
   isActive: boolean;
 }
 
-export interface UpdateBrandRequest extends CreateBrandRequest {}
+export type UpdateBrandRequest = CreateBrandRequest;
 
 // Admin Order Management
 export interface UpdateOrderStatusRequest {
@@ -376,7 +376,7 @@ export interface CreateDiscountRequest {
   showCountdown: boolean;
 }
 
-export interface UpdateDiscountRequest extends CreateDiscountRequest {}
+export type UpdateDiscountRequest = CreateDiscountRequest;
 
 // Public deals (curated, live discounts with Placement != None)
 export interface DealDto {
@@ -475,7 +475,7 @@ export interface CreateAddressRequest {
   isDefault: boolean;
 }
 
-export interface UpdateAddressRequest extends CreateAddressRequest {}
+export type UpdateAddressRequest = CreateAddressRequest;
 
 // Reports
 export interface SalesSummaryDto {

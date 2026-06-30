@@ -42,6 +42,7 @@ export default function AdminReportsPage() {
   }, [days]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchReport toggles its loading flag
     fetchReport();
   }, [fetchReport]);
 

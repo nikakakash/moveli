@@ -18,7 +18,7 @@ function RefundEn() {
     <>
       <Section title="14-day return right">
         <p>
-          Under Georgia's Consumer Protection Law (2022, Article 30), you may return any
+          Under Georgia&apos;s Consumer Protection Law (2022, Article 30), you may return any
           product purchased online within <strong>14 calendar days</strong> of delivery,
           without giving a reason. This is your legal right for all distance purchases.
         </p>
@@ -60,7 +60,7 @@ function RefundEn() {
       <Section title="How to request a return">
         <ol className="list-decimal pl-5 space-y-1">
           <li>Contact us at <strong>support@moveli.ge</strong> with your order number.</li>
-          <li>We'll confirm eligibility and provide return instructions.</li>
+          <li>We&apos;ll confirm eligibility and provide return instructions.</li>
           <li>Ship the product back in its original packaging.</li>
           <li>Once we receive and inspect the item, we process the refund.</li>
         </ol>

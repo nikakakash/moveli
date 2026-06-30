@@ -53,6 +53,7 @@ export default function AdminCustomersPage() {
   }, [searchInput]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchCustomers toggles its loading flag
     fetchCustomers();
   }, [fetchCustomers]);
 

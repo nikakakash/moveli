@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { useRouter, Link } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { useCartStore } from "@/stores/cart-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -21,7 +21,6 @@ export function CheckoutContent() {
   const t = useTranslations("checkout");
   const tCart = useTranslations("cart");
   const locale = useLocale();
-  const router = useRouter();
   const { items, total, clearLocal } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const { settings, ensureLoaded } = useSettingsStore();

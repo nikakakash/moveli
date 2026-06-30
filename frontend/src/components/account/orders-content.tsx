@@ -33,6 +33,7 @@ export function OrdersContent() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: show loading while (re)fetching on auth/page change
     setIsLoading(true);
     getOrders(page, 10)
       .then(setData)

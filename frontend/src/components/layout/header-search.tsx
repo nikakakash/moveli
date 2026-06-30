@@ -48,6 +48,7 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
 
   // Load recent searches once on mount.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: defer the localStorage read to the client to avoid an SSR hydration mismatch
     setRecent(readRecent());
   }, []);
 
@@ -65,6 +66,7 @@ export function HeaderSearch({ onNavigate, autoFocus }: HeaderSearchProps) {
   // Debounced fetch
   useEffect(() => {
     if (!showSuggestions) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: clear stale suggestions when the query is too short
       setSuggestions([]);
       return;
     }

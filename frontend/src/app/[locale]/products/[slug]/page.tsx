@@ -1,4 +1,3 @@
-import { getTranslations, getLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { StorefrontLayout } from "@/components/layout/storefront-layout";

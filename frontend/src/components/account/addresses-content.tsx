@@ -42,6 +42,7 @@ export function AddressesContent() {
   }, [t]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchAddresses toggles its loading flag
     fetchAddresses();
   }, [fetchAddresses]);
 

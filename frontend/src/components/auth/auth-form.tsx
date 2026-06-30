@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { MoveliLogo } from "@/components/ui/moveli-logo";
 import { useAuthStore } from "@/stores/auth-store";
-import { toast } from "sonner";
 import { Eye, EyeSlash, Truck, ShieldCheck, Tag, Star } from "@phosphor-icons/react";
 
 interface Props {

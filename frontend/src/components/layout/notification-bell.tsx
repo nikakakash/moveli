@@ -22,8 +22,15 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  // Refresh relative timestamps on a timer instead of reading the clock during render (purity).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const timeAgo = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
+    const diff = now - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return "now";
     if (mins < 60) return `${mins}m`;

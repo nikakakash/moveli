@@ -109,10 +109,12 @@ export default function AdminProductsPage() {
   }, [searchInput]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchProducts toggles its loading flag
     fetchProducts();
   }, [fetchProducts]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load; fetchFormData populates form options
     fetchFormData();
   }, [fetchFormData]);
 

@@ -18,9 +18,9 @@ function PrivacyEn() {
     <>
       <Section title="1. Who we are">
         <p>
-          MOVELI ("we", "us", "our") is an online marketplace registered in Georgia.
+          MOVELI (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) is an online marketplace registered in Georgia.
           We are the data controller responsible for your personal data in accordance with
-          Georgia's Law on Personal Data Protection (2011, as amended).
+          Georgia&apos;s Law on Personal Data Protection (2011, as amended).
         </p>
       </Section>
 
@@ -107,7 +107,7 @@ function PrivacyKa() {
     <>
       <Section title="1. ვინ ვართ ჩვენ">
         <p>
-          MOVELI („ჩვენ", „ჩვენი") არის საქართველოში რეგისტრირებული ონლაინ მარკეტპლეისი.
+          MOVELI („ჩვენ&quot;, „ჩვენი&quot;) არის საქართველოში რეგისტრირებული ონლაინ მარკეტპლეისი.
           ჩვენ ვართ მონაცემთა დამმუშავებელი, რომელიც პასუხისმგებელია თქვენს პერსონალურ
           მონაცემებზე საქართველოს პერსონალურ მონაცემთა დაცვის კანონის შესაბამისად (2011, ცვლილებებით).
         </p>
