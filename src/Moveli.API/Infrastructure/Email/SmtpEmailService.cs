@@ -28,8 +28,9 @@ public class SmtpEmailService : IEmailService
 
         using var client = new SmtpClient();
         var socketOptions = _options.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
-        await client.ConnectAsync(_options.Host, _options.Port, socketOptions, cancellationToken);
-        if (!string.IsNullOrWhiteSpace(_options.User))
+        // Host is non-null here: this service is only registered when EmailOptions.IsConfigured.
+        await client.ConnectAsync(_options.Host!, _options.Port, socketOptions, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(_options.User) && !string.IsNullOrWhiteSpace(_options.Password))
             await client.AuthenticateAsync(_options.User, _options.Password, cancellationToken);
         await client.SendAsync(message, cancellationToken);
         await client.DisconnectAsync(true, cancellationToken);

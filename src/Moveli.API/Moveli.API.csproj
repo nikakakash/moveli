@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\Moveli.Domain\Moveli.Domain.csproj" />
@@ -23,6 +23,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>7b4c5e62-315a-42c9-a588-ce7ebcdeba0f</UserSecretsId>
   </PropertyGroup>
 
 </Project>

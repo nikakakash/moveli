@@ -146,7 +146,16 @@
       "Bash(cd /c/Users/Nika/Desktop/MOveli/frontend/src && find . -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) | head -200)",
       "Bash(xargs ls)",
       "Bash(xargs cat)",
-      "Bash(Sort-Object FullName)"
+      "Bash(Sort-Object FullName)",
+      "PowerShell(Get-CimInstance *)",
+      "Bash(dotnet user-secrets *)",
+      "Bash(grep -i '\\\\.log$')",
+      "Bash(cat src/Moveli.API/Dockerfile)",
+      "Bash(cat deploy/Caddyfile)",
+      "Bash(ls .github/workflows)",
+      "Bash(rm -f api_err.log api_run.log api-err.log api-out.log smoke.log)",
+      "Bash(ls *.log)",
+      "Bash(ACME_EMAIL=x@x.com JWT_SECRET=x POSTGRES_PASSWORD=x NEXT_PUBLIC_API_URL=https://api.x/api docker compose -f docker-compose.prod.yml config)"
     ]
   },
   "enabledPlugins": {

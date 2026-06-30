@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Moveli.API.Infrastructure.Data;
 using Moveli.API.Infrastructure.Identity;
@@ -17,17 +18,23 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
     private readonly ITokenService _tokenService;
     private readonly MoveliDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
+    private readonly ILogger<RegisterCommandHandler> _logger;
 
     public RegisterCommandHandler(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
         MoveliDbContext context,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IEmailService emailService,
+        ILogger<RegisterCommandHandler> logger)
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _context = context;
         _configuration = configuration;
+        _emailService = emailService;
+        _logger = logger;
     }
 
     public async Task<Result<AuthResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -78,10 +85,29 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
 
         var expirationMinutes = int.Parse(_configuration["Jwt:AccessTokenExpirationMinutes"] ?? "30");
 
+        await TrySendWelcomeAsync(user, cancellationToken);
+
         return Result<AuthResponse>.Success(new AuthResponse(
             accessToken,
             refreshTokenStr,
             DateTime.UtcNow.AddMinutes(expirationMinutes),
             new UserDto(user.Id, user.Email!, user.FirstName, user.LastName, user.PhoneNumber ?? "", user.PreferredLanguage, roles.ToList())));
+    }
+
+    // Best-effort welcome email — registration has already committed, so delivery must never fail it.
+    private async Task TrySendWelcomeAsync(ApplicationUser user, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var body = $"""
+                <p>Welcome to Moveli, {user.FirstName}!</p>
+                <p>Your account is ready. Browse the store and enjoy your shopping.</p>
+                """;
+            await _emailService.SendAsync(user.Email!, "Welcome to Moveli", body, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send welcome email to user {UserId}", user.Id);
+        }
     }
 }

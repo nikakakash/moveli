@@ -68,23 +68,46 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             IsRead = false
         }, cancellationToken);
 
-        await TrySendStatusEmailAsync(order.UserId, message, cancellationToken);
+        await TrySendStatusEmailAsync(order, message, cancellationToken);
 
         return Result.Success();
     }
 
-    private async Task TrySendStatusEmailAsync(Guid userId, string message, CancellationToken cancellationToken)
+    private async Task TrySendStatusEmailAsync(Order order, string message, CancellationToken cancellationToken)
     {
         try
         {
-            var email = await _userLookup.GetEmailAsync(userId, cancellationToken);
-            if (!string.IsNullOrEmpty(email))
-                await _emailService.SendAsync(email, "Moveli order update", $"<p>{message}</p>", cancellationToken);
+            var email = await _userLookup.GetEmailAsync(order.UserId, cancellationToken);
+            if (string.IsNullOrEmpty(email)) return;
+
+            var (subject, body) = BuildStatusEmail(order, message);
+            await _emailService.SendAsync(email, subject, body, cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send order status email to user {UserId}", userId);
+            _logger.LogError(ex, "Failed to send order status email to user {UserId}", order.UserId);
         }
+    }
+
+    private static (string Subject, string Body) BuildStatusEmail(Order order, string fallbackMessage)
+    {
+        var number = order.OrderNumber;
+        return order.Status switch
+        {
+            OrderStatus.Confirmed => (
+                $"Order {number} confirmed",
+                $"<p>Your order <strong>{number}</strong> has been confirmed and we've started preparing it.</p>"
+                + "<p>We'll email you again as soon as it ships.</p>"),
+            OrderStatus.Shipped => (
+                $"Order {number} shipped",
+                $"<p>Good news — your order <strong>{number}</strong> is on its way to {order.ShippingAddress.City}.</p>"
+                + "<p>Our courier will contact you on the phone number you provided to arrange delivery.</p>"),
+            OrderStatus.Cancelled => (
+                $"Order {number} cancelled",
+                $"<p>Your order <strong>{number}</strong> has been cancelled.</p>"
+                + "<p>As this was a cash-on-delivery order, you were not charged. If you have any questions, just reply to this email.</p>"),
+            _ => ("Moveli order update", $"<p>{fallbackMessage}</p>")
+        };
     }
 
     private static string GetStatusChangeMessage(string orderNumber, OrderStatus newStatus)
