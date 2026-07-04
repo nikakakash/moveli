@@ -2,26 +2,37 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { Heart, Star } from "@phosphor-icons/react";
 import { formatPrice, getDiscountPercentage } from "@/lib/format";
 import { resolveProductImage } from "@/lib/product-images";
+import { useWishlistStore } from "@/stores/wishlist-store";
 import type { ProductListDto } from "@/lib/api/types";
 
 interface ProductCardProps {
   product: ProductListDto;
-  isWishlisted?: boolean;
-  onWishlistToggle?: () => void;
 }
 
-export function ProductCard({
-  product,
-  isWishlisted,
-  onWishlistToggle,
-}: ProductCardProps) {
+export function ProductCard({ product }: ProductCardProps) {
   const locale = useLocale();
   const [imgError, setImgError] = useState(false);
+  const isWishlisted = useWishlistStore((s) => s.productIds.includes(product.id));
+  const toggleWishlist = useWishlistStore((s) => s.toggle);
+
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await toggleWishlist(product.id);
+    } catch {
+      toast.error(
+        locale === "ka" ? "სცადეთ თავიდან" : "Something went wrong",
+      );
+    }
+  };
+
   const name = locale === "ka" ? product.nameKa : product.nameEn;
   const imageUrl = resolveProductImage(product.slug, product.mainImageUrl);
   const hasDiscount =
@@ -64,29 +75,23 @@ export function ProductCard({
           </span>
         )}
 
-        {/* Wishlist — only shown where a toggle handler is wired (e.g. the wishlist page). */}
-        {onWishlistToggle && (
-          <button
-            aria-label={
-              isWishlisted
-                ? locale === "ka" ? "სურვილების სიიდან ამოშლა" : "Remove from wishlist"
-                : locale === "ka" ? "სურვილების სიაში დამატება" : "Add to wishlist"
-            }
-            aria-pressed={isWishlisted}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onWishlistToggle();
-            }}
-            className={`absolute top-2 right-2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center transition hover:bg-white hover:text-red-500 ${
-              isWishlisted
-                ? "opacity-100 text-red-500"
-                : "opacity-0 group-hover:opacity-100"
-            }`}
-          >
-            <Heart size={16} weight={isWishlisted ? "fill" : "regular"} />
-          </button>
-        )}
+        {/* Wishlist */}
+        <button
+          aria-label={
+            isWishlisted
+              ? locale === "ka" ? "სურვილების სიიდან ამოშლა" : "Remove from wishlist"
+              : locale === "ka" ? "სურვილების სიაში დამატება" : "Add to wishlist"
+          }
+          aria-pressed={isWishlisted}
+          onClick={handleWishlist}
+          className={`absolute top-2 right-2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center transition hover:bg-white hover:text-red-500 ${
+            isWishlisted
+              ? "opacity-100 text-red-500"
+              : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
+          <Heart size={16} weight={isWishlisted ? "fill" : "regular"} />
+        </button>
       </div>
 
       {/* Info */}

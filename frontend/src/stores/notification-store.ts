@@ -31,12 +31,19 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   markAsRead: async (id: string) => {
     try {
       await notificationsApi.markAsRead(id);
-      set((state) => ({
-        notifications: state.notifications.map((n) =>
-          n.id === id ? { ...n, isRead: true } : n
-        ),
-        unreadCount: Math.max(0, state.unreadCount - 1),
-      }));
+      set((state) => {
+        // Only decrement when this notification was actually unread, so re-marking an
+        // already-read item can't drive the badge below the true unread count.
+        const wasUnread = state.notifications.some((n) => n.id === id && !n.isRead);
+        return {
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, isRead: true } : n
+          ),
+          unreadCount: wasUnread
+            ? Math.max(0, state.unreadCount - 1)
+            : state.unreadCount,
+        };
+      });
     } catch {
       // ignore
     }

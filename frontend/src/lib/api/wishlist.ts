@@ -6,9 +6,8 @@ export function getWishlist() {
 }
 
 export function addToWishlist(productId: string) {
-  return apiFetch<void>("/wishlist", {
+  return apiFetch<void>(`/wishlist/${productId}`, {
     method: "POST",
-    body: { productId },
     requireAuth: true,
   });
 }

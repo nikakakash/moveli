@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { MoveliLogo } from "@/components/ui/moveli-logo";
 import { useCartStore } from "@/stores/cart-store";
+import { useWishlistStore } from "@/stores/wishlist-store";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   Heart,
@@ -23,6 +24,7 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const cartCount = useCartStore((s) => s.itemCount());
+  const wishlistCount = useWishlistStore((s) => s.productIds.length);
   const { isAuthenticated, user } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   // false on the server and first client render, true afterwards — gates client-only UI
@@ -122,9 +124,14 @@ export function Header() {
             {/* Wishlist */}
             <Link
               href="/account/wishlist"
-              className="text-gray-600 hover:text-moveli-purple-600 transition"
+              className="relative text-gray-600 hover:text-moveli-purple-600 transition"
             >
               <Heart size={22} />
+              {mounted && wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-2 bg-moveli-gradient text-white text-[9px] leading-none font-bold min-w-4 h-4 px-1 rounded-full flex items-center justify-center ring-2 ring-white">
+                  {wishlistCount > 99 ? "99+" : wishlistCount}
+                </span>
+              )}
             </Link>
 
             {/* Notifications */}

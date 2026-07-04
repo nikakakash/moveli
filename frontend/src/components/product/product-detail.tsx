@@ -10,10 +10,12 @@ import {
   ArrowCounterClockwise,
   Minus,
   Plus,
+  Heart,
 } from "@phosphor-icons/react";
 import { formatPrice } from "@/lib/format";
 import { resolveProductImage } from "@/lib/product-images";
 import { useCartStore } from "@/stores/cart-store";
+import { useWishlistStore } from "@/stores/wishlist-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { createReview } from "@/lib/api/reviews";
 import { toast } from "sonner";
@@ -29,6 +31,8 @@ export function ProductDetail({ product, reviews }: Props) {
   const t = useTranslations("product");
   const tCart = useTranslations("cart");
   const addItem = useCartStore((s) => s.addItem);
+  const isWishlisted = useWishlistStore((s) => s.productIds.includes(product.id));
+  const toggleWishlist = useWishlistStore((s) => s.toggle);
   const { isAuthenticated } = useAuthStore();
 
   const name = locale === "ka" ? product.nameKa : product.nameEn;
@@ -80,7 +84,6 @@ export function ProductDetail({ product, reviews }: Props) {
   const [reviewHover, setReviewHover] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [allReviews, setAllReviews] = useState<ReviewDto[]>(reviews);
 
   const images = [...product.images].sort((a, b) => a.sortOrder - b.sortOrder);
   const currentImage = resolveProductImage(product.slug, images[selectedImage]?.url);
@@ -104,6 +107,14 @@ export function ProductDetail({ product, reviews }: Props) {
     }
   };
 
+  const handleWishlist = async () => {
+    try {
+      await toggleWishlist(product.id);
+    } catch {
+      toast.error(locale === "ka" ? "სცადეთ თავიდან" : "Something went wrong");
+    }
+  };
+
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (reviewRating === 0) {
@@ -112,15 +123,12 @@ export function ProductDetail({ product, reviews }: Props) {
     }
     setIsSubmittingReview(true);
     try {
-      const newReview = await createReview(
-        product.id,
-        reviewRating,
-        reviewComment || undefined
-      );
-      setAllReviews((prev) => [newReview, ...prev]);
+      // Reviews are created pending moderation and aren't returned by the public list, so
+      // don't prepend it (it would vanish on refresh) — tell the user it's awaiting approval.
+      await createReview(product.id, reviewRating, reviewComment || undefined);
       setReviewRating(0);
       setReviewComment("");
-      toast.success(t("reviewSubmitted"));
+      toast.success(t("reviewPending"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("reviewError"));
     } finally {
@@ -288,6 +296,23 @@ export function ProductDetail({ product, reviews }: Props) {
               <ShoppingCart size={20} />
               {isAdding ? "..." : t("addToCart")}
             </button>
+
+            <button
+              onClick={handleWishlist}
+              aria-label={
+                isWishlisted
+                  ? locale === "ka" ? "სურვილების სიიდან ამოშლა" : "Remove from wishlist"
+                  : locale === "ka" ? "სურვილების სიაში დამატება" : "Add to wishlist"
+              }
+              aria-pressed={isWishlisted}
+              className={`w-12 h-12 flex items-center justify-center rounded-lg border transition ${
+                isWishlisted
+                  ? "border-red-200 text-red-500 bg-red-50"
+                  : "border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200"
+              }`}
+            >
+              <Heart size={20} weight={isWishlisted ? "fill" : "regular"} />
+            </button>
           </div>
 
           {/* Delivery info */}
@@ -400,10 +425,10 @@ export function ProductDetail({ product, reviews }: Props) {
               )}
 
               {/* Reviews list */}
-              {allReviews.length === 0 ? (
+              {reviews.length === 0 ? (
                 <p className="text-gray-500">{t("noReviews")}</p>
               ) : (
-                allReviews.map((review) => (
+                reviews.map((review) => (
                   <div
                     key={review.id}
                     className="border border-gray-100 rounded-lg p-4"

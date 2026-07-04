@@ -116,7 +116,10 @@ export function CheckoutContent() {
   const regionalShippingCost = settings?.regionalShippingCost ?? 14;
   const minOrderTotal = settings?.minOrderTotal ?? 30;
 
-  const isFreeShippingCity = city === freeShippingCity;
+  // Match the backend's tolerant comparison (Trim + case-insensitive) so the displayed fee
+  // always equals what the order is actually charged, regardless of saved-address casing.
+  const isFreeShippingCity =
+    city.trim().toLowerCase() === freeShippingCity.trim().toLowerCase();
   const shippingCost = isFreeShippingCity
     ? total >= freeShippingThreshold
       ? 0

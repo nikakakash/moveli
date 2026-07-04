@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Bell } from "@phosphor-icons/react";
 import { useNotificationStore } from "@/stores/notification-store";
 import { Link } from "@/i18n/navigation";
 
 export function NotificationBell() {
+  const t = useTranslations("notifications");
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotificationStore();
   const [open, setOpen] = useState(false);
@@ -58,14 +60,14 @@ export function NotificationBell() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="text-sm font-bold text-gray-900">
-              Notifications
+              {t("title")}
             </span>
             {unreadCount > 0 && (
               <button
                 onClick={() => markAllAsRead()}
                 className="text-xs text-moveli-purple-600 hover:underline"
               >
-                Mark all as read
+                {t("markAllRead")}
               </button>
             )}
           </div>
@@ -74,7 +76,7 @@ export function NotificationBell() {
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-gray-400">
-                No notifications
+                {t("empty")}
               </div>
             ) : (
               notifications.map((n) => (
@@ -106,7 +108,7 @@ export function NotificationBell() {
                             }}
                             className="text-xs text-moveli-purple-600 hover:underline"
                           >
-                            View order
+                            {t("viewOrder")}
                           </Link>
                         )}
                       </div>

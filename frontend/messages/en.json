@@ -1,4 +1,10 @@
 {
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "No notifications",
+    "viewOrder": "View order"
+  },
   "nav": {
     "home": "Home",
     "categories": "Categories",
@@ -84,6 +90,7 @@
     "reviewPlaceholder": "Share your experience with this product...",
     "submitReview": "Submit review",
     "reviewSubmitted": "Review submitted!",
+    "reviewPending": "Thanks! Your review is pending approval.",
     "reviewError": "Failed to submit review",
     "loginToReview": "Sign in to leave a review",
     "noReviews": "No reviews yet. Be the first to review!",

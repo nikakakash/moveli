@@ -155,7 +155,23 @@
       "Bash(ls .github/workflows)",
       "Bash(rm -f api_err.log api_run.log api-err.log api-out.log smoke.log)",
       "Bash(ls *.log)",
-      "Bash(ACME_EMAIL=x@x.com JWT_SECRET=x POSTGRES_PASSWORD=x NEXT_PUBLIC_API_URL=https://api.x/api docker compose -f docker-compose.prod.yml config)"
+      "Bash(ACME_EMAIL=x@x.com JWT_SECRET=x POSTGRES_PASSWORD=x NEXT_PUBLIC_API_URL=https://api.x/api docker compose -f docker-compose.prod.yml config)",
+      "WebFetch(domain:upstash.com)",
+      "PowerShell(npm *)",
+      "PowerShell(Get-Process *)",
+      "Bash(curl -s http://localhost:5026/api/settings/public)",
+      "Bash(grep -rn \"public\" src/Moveli.API/Controllers/SettingsController.cs)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:5026/api/settings/public)",
+      "Bash(curl -s http://localhost:5026/api/settings)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('freeShippingCity=', repr\\(d.get\\('freeShippingCity'\\)\\)\\); print\\('shippingCost=', d.get\\('shippingCost'\\)\\); print\\('regionalShippingCost=', d.get\\('regionalShippingCost'\\)\\)\")",
+      "Bash(xargs grep -l \"class DiscountSnapshot\\\\|record DiscountSnapshot\\\\|DiscountSnapshot\\(\")",
+      "Bash(xargs grep -l \"ResetPasswordCommand\\\\|RefreshTokenCommand\\\\|ForgotPasswordCommand\")",
+      "Skill(code-review)",
+      "Bash(python -c \"import json;d=json.load\\(open\\('frontend/messages/en.json',encoding='utf-8'\\)\\);print\\('notifications' in d, list\\(d.get\\('notifications',{}\\).keys\\(\\)\\) if 'notifications' in d else 'NONE'\\)\")",
+      "Bash(python -c \"import json;print\\(list\\(json.load\\(open\\('frontend/messages/en.json',encoding='utf-8'\\)\\).keys\\(\\)\\)\\)\")",
+      "Bash(python -c \"import json;print\\(list\\(json.load\\(open\\('frontend/messages/ka.json',encoding='utf-8'\\)\\).keys\\(\\)\\)\\)\")",
+      "Bash(python -c \"import json;d=json.load\\(open\\('frontend/messages/en.json',encoding='utf-8'\\)\\);print\\([k for k in d.get\\('product',{}\\).keys\\(\\) if 'review' in k.lower\\(\\) or 'pending' in k.lower\\(\\)]\\)\")",
+      "Bash(python *)"
     ]
   },
   "enabledPlugins": {

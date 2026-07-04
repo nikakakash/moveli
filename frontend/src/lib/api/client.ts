@@ -108,7 +108,10 @@ export async function apiFetch<T>(
 
   if (res.status === 204) return undefined as T;
 
-  return res.json();
+  // Some endpoints return 200 with an empty body (e.g. wishlist add/remove); parsing that
+  // as JSON would throw, so only parse when there is actually a body.
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export class ApiError extends Error {

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { getSettings, updateSettings, uploadImage } from "@/lib/api/admin";
 import type { UpdateSettingsRequest } from "@/lib/api/types";
+import { GEORGIAN_CITIES } from "@/lib/cities";
 import Image from "next/image";
 import { UploadSimple, X } from "@phosphor-icons/react";
 
@@ -196,14 +197,19 @@ export default function AdminSettingsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("freeShippingCity")}
               </label>
-              <input
-                type="text"
+              <select
                 value={form.freeShippingCity}
                 onChange={(e) =>
                   setForm({ ...form, freeShippingCity: e.target.value })
                 }
                 className={inputClass}
-              />
+              >
+                {GEORGIAN_CITIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.value} ({c.en})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
