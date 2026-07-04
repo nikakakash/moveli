@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Fragment, useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { getAdminOrders, updateOrderStatus } from "@/lib/api/admin";
+import { CaretDown, CaretRight } from "@phosphor-icons/react";
+import { getAdminOrders, getAdminOrderDetail, updateOrderStatus } from "@/lib/api/admin";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
-import type { OrderListDto, OrderStatus, PagedResult } from "@/lib/api/types";
+import type { OrderDto, OrderListDto, OrderStatus, PagedResult } from "@/lib/api/types";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 
 const STATUSES: OrderStatus[] = [
@@ -36,6 +37,30 @@ export default function AdminOrdersPage() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "">("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+
+  // Line items are shown by expanding a row; fetched on demand from the order-detail
+  // endpoint and cached so re-expanding the same order doesn't refetch.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [details, setDetails] = useState<Record<string, OrderDto>>({});
+  const [detailLoading, setDetailLoading] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = async (id: string) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    if (details[id] || detailLoading[id]) return;
+    setDetailLoading((m) => ({ ...m, [id]: true }));
+    try {
+      const detail = await getAdminOrderDetail(id);
+      setDetails((m) => ({ ...m, [id]: detail }));
+    } catch {
+      toast.error("Failed to load order details");
+    } finally {
+      setDetailLoading((m) => ({ ...m, [id]: false }));
+    }
+  };
 
   const requestRef = useRef(0);
   const fetchOrders = useCallback(async () => {
@@ -142,8 +167,26 @@ export default function AdminOrdersPage() {
               </tr>
             ) : (
               data.items.map((order) => (
-                <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{order.orderNumber}</td>
+                <Fragment key={order.id}>
+                <tr className="border-b border-gray-50 hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(order.id)}
+                      aria-expanded={expandedId === order.id}
+                      className="flex items-center gap-1.5 hover:text-moveli-purple-600 transition"
+                    >
+                      {expandedId === order.id ? (
+                        <CaretDown size={14} weight="bold" />
+                      ) : (
+                        <CaretRight size={14} weight="bold" />
+                      )}
+                      {order.orderNumber}
+                      <span className="text-xs font-normal text-gray-400">
+                        ({order.itemCount})
+                      </span>
+                    </button>
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{order.shippingFullName}</td>
                   <td className="px-4 py-3 text-gray-600">{order.shippingPhoneNumber}</td>
                   <td className="px-4 py-3 text-gray-600">
@@ -175,6 +218,40 @@ export default function AdminOrdersPage() {
                     </select>
                   </td>
                 </tr>
+                {expandedId === order.id && (
+                  <tr className="border-b border-gray-100 bg-gray-50/60">
+                    <td colSpan={9} className="px-4 py-3">
+                      {detailLoading[order.id] ? (
+                        <p className="text-sm text-gray-400">Loading...</p>
+                      ) : details[order.id] ? (
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-2">
+                            {t("products")}
+                          </p>
+                          <ul className="space-y-1">
+                            {details[order.id].items.map((it) => (
+                              <li
+                                key={it.id}
+                                className="flex justify-between gap-4 text-sm"
+                              >
+                                <span className="text-gray-800">
+                                  {it.productName}
+                                  <span className="text-gray-400"> × {it.quantity}</span>
+                                </span>
+                                <span className="text-gray-500 whitespace-nowrap">
+                                  {formatPrice(it.total)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-red-500">{t("noResults")}</p>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))
             )}
           </tbody>
